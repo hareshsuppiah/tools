@@ -1,30 +1,28 @@
-# tools
+# sport science tools
 
-Browser-based tools for sport scientists, researchers, and coaches.
+Free, browser-based tools for sport scientists, researchers, and coaches.
 
-Inspired by [Simon Willison's tools](https://github.com/simonw/tools).
+**Visit the site:** https://hareshsuppiah.github.io/tools/
 
-Live at: https://hareshsuppiah.github.io/tools/
+No sign-up, no install, no data collection. Every tool runs entirely in your browser — nothing is sent to a server.
 
-## Tools
+## Available Tools
 
-### Calculators & Converters
-- [Sprint Speed Calculator](https://hareshsuppiah.github.io/tools/sprint-speed-calculator) — convert between speed units and calculate split times
-- [Effect Size Calculator](https://hareshsuppiah.github.io/tools/effect-size-calculator) — compute Cohen's d and Hedges' g with Hopkins magnitude thresholds
+**Sprint Speed Calculator** — convert between m/s, km/h, mph, min/km, and min/mile. Also calculates split times for common sprint distances (10m to 100m).
+
+**Effect Size Calculator** — enter group or pre-post data to get Cohen's d, Hedges' g, 95% confidence intervals, and a magnitude rating using Hopkins' sport science thresholds.
+
+## How to Use
+
+1. Go to https://hareshsuppiah.github.io/tools/
+2. Pick a tool
+3. Enter your values — results update instantly
+
+That's it. Works on desktop and mobile.
 
 ## About
 
-All tools run entirely in your browser. No data is transmitted or stored on any server.
-
-Built by [Haresh Suppiah](https://hareshsuppiah.com).
-
-## Adding a new tool
-
-1. Create a new `.html` file in the root directory (e.g., `my-new-tool.html`)
-2. Make it self-contained: inline all CSS and JS
-3. Include a "back to all tools" link to `./`
-4. Add an entry to `index.html` under the appropriate category
-5. Update this README
+Built by [Haresh Suppiah](https://hareshsuppiah.com). Concept inspired by [Simon Willison's tools](https://github.com/simonw/tools).
 
 ## License
 
