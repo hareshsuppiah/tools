@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sport science tools — haresh suppiah</title>
+    <meta name="description" content="Browser-based tools for sport scientists, researchers, and coaches. All tools run locally — no data leaves your device.">
+    <meta property="og:title" content="sport science tools — haresh suppiah">
+    <meta property="og:description" content="Browser-based tools for sport scientists, researchers, and coaches.">
+    <meta property="og:url" content="https://hareshsuppiah.github.io/tools/">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="theme-toggle">
+        <button id="theme-btn" class="theme-btn">
+            <span class="theme-icon">☀️</span>
+        </button>
+        <div id="theme-dropdown" class="theme-dropdown">
+            <div class="theme-option" data-theme="light">☀️ light</div>
+            <div class="theme-option" data-theme="dark">🌙 dark</div>
+            <div class="theme-option" data-theme="system">💻 system</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="site-title">sport science tools</h1>
+            <p class="site-tagline">a collection of browser-based tools for sport scientists, researchers, and coaches. all tools run locally in your browser — no data leaves your device.</p>
+            <p class="site-attribution">built by <a href="https://hareshsuppiah.com">haresh suppiah</a> for the <a href="https://sport.sciencesnag.com">sport science snag</a> community</p>
+        </div>
+
+        <div class="category">
+            <h2 class="category-title">calculators & converters</h2>
+            <div class="tool-list">
+                <a href="sprint-speed-calculator.html" class="tool-card">
+                    <span class="tool-icon">⚡</span>
+                    <div class="tool-content">
+                        <div class="tool-title">sprint speed calculator</div>
+                        <div class="tool-subtitle">convert between m/s, km/h, mph and calculate split times</div>
+                    </div>
+                </a>
+                <a href="effect-size-calculator.html" class="tool-card">
+                    <span class="tool-icon">📊</span>
+                    <div class="tool-content">
+                        <div class="tool-title">effect size calculator</div>
+                        <div class="tool-subtitle">cohen's d, hedges' g with hopkins magnitude thresholds</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="category">
+            <h2 class="category-title">data & visualization</h2>
+            <p class="coming-soon">coming soon</p>
+        </div>
+
+        <div class="category">
+            <h2 class="category-title">assessment & testing</h2>
+            <p class="coming-soon">coming soon</p>
+        </div>
+
+        <div class="category">
+            <h2 class="category-title">text & writing</h2>
+            <p class="coming-soon">coming soon</p>
+        </div>
+
+        <div class="footer">
+            <p><a href="colophon.html">colophon</a> · <a href="https://github.com/hareshsuppiah/tools">source on github</a></p>
+        </div>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        const themeDropdown = document.getElementById('theme-dropdown');
+        const themeIcon = themeBtn.querySelector('.theme-icon');
+        const html = document.documentElement;
+
+        const icons = { light: '☀️', dark: '🌙', system: '💻' };
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+
+        function applyTheme(setting) {
+            const resolved = setting === 'system' ? getSystemTheme() : setting;
+            html.className = resolved;
+            themeIcon.textContent = icons[setting];
+            localStorage.setItem('theme', setting);
+        }
+
+        themeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeDropdown.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                applyTheme(option.dataset.theme);
+                themeDropdown.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('click', () => {
+            themeDropdown.classList.remove('active');
+        });
+
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+            if (localStorage.getItem('theme') === 'system') applyTheme('system');
+        });
+
+        const saved = localStorage.getItem('theme') || 'dark';
+        applyTheme(saved);
+    </script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sprint speed calculator — sport science tools</title>
+    <meta name="description" content="Convert between m/s, km/h, mph, min/km, min/mile and calculate sprint split times.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --text-secondary: #aaaaaa;
+            --accent-color: #7ae2cf;
+            --accent-hover: #5dd4c4;
+            --card-bg: #1a1a1a;
+            --card-border: #333333;
+            --input-bg: #111111;
+            --input-border: #333333;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [class="light"] {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --text-secondary: #666666;
+            --accent-color: #5dd4c4;
+            --accent-hover: #4bc2b8;
+            --card-bg: #f5f5f5;
+            --card-border: #e0e0e0;
+            --input-bg: #ffffff;
+            --input-border: #cccccc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            transition: var(--transition);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        select {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-value {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::before,
+        .section-title::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 60px;
+            height: 1px;
+            background: var(--card-border);
+        }
+
+        .section-title::before { left: 0; }
+        .section-title::after { right: 0; }
+
+        .splits {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .split-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .split-distance {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .split-time {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        .privacy {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            margin-top: 2rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .theme-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-icon { font-size: 1.2rem; }
+
+        @media (max-width: 480px) {
+            .results { grid-template-columns: 1fr; }
+            .splits { grid-template-columns: repeat(2, 1fr); }
+            .input-group { flex-direction: column; }
+            h1 { font-size: 1.3rem; }
+            .theme-toggle { top: 1rem; right: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button id="theme-btn" class="theme-btn">
+            <span class="theme-icon">☀️</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <a href="./" class="back-link">← back to all tools</a>
+
+        <h1>sprint speed calculator</h1>
+        <p class="subtitle">convert between speed units and calculate split times</p>
+
+        <div class="input-group">
+            <input type="number" id="speed-input" placeholder="enter speed" step="any" min="0">
+            <select id="unit-select">
+                <option value="ms">m/s</option>
+                <option value="kmh">km/h</option>
+                <option value="mph">mph</option>
+                <option value="minkm">min/km</option>
+                <option value="minmi">min/mile</option>
+            </select>
+        </div>
+
+        <div class="results" id="results">
+            <div class="result-card">
+                <div class="result-label">m/s</div>
+                <div class="result-value" id="res-ms">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">km/h</div>
+                <div class="result-value" id="res-kmh">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">mph</div>
+                <div class="result-value" id="res-mph">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">min/km</div>
+                <div class="result-value" id="res-minkm">—</div>
+            </div>
+            <div class="result-card">
+                <div class="result-label">min/mile</div>
+                <div class="result-value" id="res-minmi">—</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">split times</h2>
+        <div class="splits" id="splits">
+            <div class="split-card"><div class="split-distance">10 m</div><div class="split-time" id="split-10">—</div></div>
+            <div class="split-card"><div class="split-distance">20 m</div><div class="split-time" id="split-20">—</div></div>
+            <div class="split-card"><div class="split-distance">30 m</div><div class="split-time" id="split-30">—</div></div>
+            <div class="split-card"><div class="split-distance">40 m</div><div class="split-time" id="split-40">—</div></div>
+            <div class="split-card"><div class="split-distance">60 m</div><div class="split-time" id="split-60">—</div></div>
+            <div class="split-card"><div class="split-distance">100 m</div><div class="split-time" id="split-100">—</div></div>
+        </div>
+
+        <p class="privacy">all calculations happen locally in your browser</p>
+    </div>
+
+    <script>
+        const speedInput = document.getElementById('speed-input');
+        const unitSelect = document.getElementById('unit-select');
+
+        function toMs(value, unit) {
+            switch (unit) {
+                case 'ms': return value;
+                case 'kmh': return value / 3.6;
+                case 'mph': return value * 0.44704;
+                case 'minkm': return value > 0 ? 1000 / (value * 60) : 0;
+                case 'minmi': return value > 0 ? 1609.344 / (value * 60) : 0;
+                default: return value;
+            }
+        }
+
+        function formatPace(totalMinutes) {
+            if (!isFinite(totalMinutes) || totalMinutes <= 0) return '—';
+            const mins = Math.floor(totalMinutes);
+            const secs = Math.round((totalMinutes - mins) * 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function calculate() {
+            const raw = parseFloat(speedInput.value);
+            if (isNaN(raw) || raw <= 0) {
+                document.querySelectorAll('.result-value, .split-time').forEach(el => el.textContent = '—');
+                return;
+            }
+
+            const ms = toMs(raw, unitSelect.value);
+            const kmh = ms * 3.6;
+            const mph = ms / 0.44704;
+            const minkm = ms > 0 ? (1000 / ms) / 60 : 0;
+            const minmi = ms > 0 ? (1609.344 / ms) / 60 : 0;
+
+            document.getElementById('res-ms').textContent = ms.toFixed(2);
+            document.getElementById('res-kmh').textContent = kmh.toFixed(2);
+            document.getElementById('res-mph').textContent = mph.toFixed(2);
+            document.getElementById('res-minkm').textContent = formatPace(minkm);
+            document.getElementById('res-minmi').textContent = formatPace(minmi);
+
+            [10, 20, 30, 40, 60, 100].forEach(d => {
+                const time = ms > 0 ? d / ms : 0;
+                document.getElementById(`split-${d}`).textContent = time > 0 ? time.toFixed(2) + 's' : '—';
+            });
+        }
+
+        speedInput.addEventListener('input', calculate);
+        unitSelect.addEventListener('change', calculate);
+
+        // Theme toggle
+        const themeBtn = document.getElementById('theme-btn');
+        const themeIcon = themeBtn.querySelector('.theme-icon');
+        const html = document.documentElement;
+        const themes = ['dark', 'light'];
+        let themeIndex = themes.indexOf(localStorage.getItem('theme') || 'dark');
+        if (themeIndex < 0) themeIndex = 0;
+
+        function applyTheme() {
+            html.className = themes[themeIndex];
+            themeIcon.textContent = themes[themeIndex] === 'light' ? '☀️' : '🌙';
+            localStorage.setItem('theme', themes[themeIndex]);
+        }
+
+        themeBtn.addEventListener('click', () => {
+            themeIndex = (themeIndex + 1) % themes.length;
+            applyTheme();
+        });
+
+        applyTheme();
+    </script>
+</body>
+</html>
