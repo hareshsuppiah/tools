@@ -16,7 +16,7 @@ Live at: https://hareshsuppiah.github.io/tools/
 
 All tools run entirely in your browser. No data is transmitted or stored on any server.
 
-Built by [Haresh Suppiah](https://hareshsuppiah.com) for the [Sport Science Snag](https://sport.sciencesnag.com) community.
+Built by [Haresh Suppiah](https://hareshsuppiah.com).
 
 ## Adding a new tool
 
