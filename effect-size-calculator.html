@@ -1,543 +1,324 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>effect size calculator — sport science tools</title>
     <meta name="description" content="Compute Cohen's d and Hedges' g with Hopkins magnitude thresholds for sport science research.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
     <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --text-secondary: #aaaaaa;
-            --accent-color: #7ae2cf;
-            --accent-hover: #5dd4c4;
-            --card-bg: #1a1a1a;
-            --card-border: #333333;
-            --input-bg: #111111;
-            --input-border: #333333;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        [class="light"] {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --text-secondary: #666666;
-            --accent-color: #5dd4c4;
-            --accent-hover: #4bc2b8;
-            --card-bg: #f5f5f5;
-            --card-border: #e0e0e0;
-            --input-bg: #ffffff;
-            --input-border: #cccccc;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: var(--transition);
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .back-link {
-            display: inline-block;
-            color: var(--accent-color);
-            text-decoration: none;
-            font-size: 0.85rem;
-            margin-bottom: 2rem;
-        }
-
-        .back-link:hover { text-decoration: underline; }
-
-        h1 {
-            font-size: 1.6rem;
-            font-weight: 400;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-bottom: 2rem;
-        }
-
-        .mode-toggle {
-            display: flex;
-            gap: 0;
-            margin-bottom: 2rem;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 0.6rem 1rem;
-            background: var(--card-bg);
-            border: none;
-            color: var(--text-secondary);
-            font-family: inherit;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .mode-btn.active {
-            background: var(--accent-color);
-            color: #000;
-        }
-
-        .input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        .input-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .input-field.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .input-field label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .input-field input {
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            padding: 0.6rem 0.75rem;
-            color: var(--text-color);
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: var(--transition);
-        }
-
-        .input-field input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .group-header {
-            grid-column: 1 / -1;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            padding-top: 0.5rem;
-        }
-
-        .results {
-            margin-bottom: 2rem;
-        }
-
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-        }
-
-        .result-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .result-value {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--accent-color);
-        }
-
-        .magnitude-section {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .magnitude-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-        }
-
-        .magnitude-text {
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-        }
-
-        .magnitude-bar-container {
-            position: relative;
-            height: 8px;
-            background: var(--input-bg);
-            border-radius: 4px;
-            overflow: visible;
-            margin-bottom: 0.5rem;
-        }
-
-        .magnitude-bar {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.4s ease, background 0.4s ease;
-        }
-
-        .magnitude-scale {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            margin-top: 0.25rem;
-        }
-
-        .hopkins-table {
-            margin-top: 1.5rem;
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-
-        .hopkins-table th,
-        .hopkins-table td {
-            padding: 0.4rem 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        .hopkins-table th {
-            color: var(--text-secondary);
-            font-weight: 400;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.05em;
-        }
-
-        .hopkins-table tr.active-row {
-            background: rgba(122, 226, 207, 0.1);
-        }
-
-        .privacy {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            opacity: 0.6;
-            margin-top: 2rem;
-        }
-
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        .theme-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .theme-icon { font-size: 1.2rem; }
-
-        @media (max-width: 480px) {
-            .input-grid { grid-template-columns: 1fr; }
-            .input-field.full-width { grid-column: 1; }
-            .group-header { grid-column: 1; }
-            h1 { font-size: 1.3rem; }
-            .theme-toggle { top: 1rem; right: 1rem; }
-        }
+      /* Tool-specific: magnitude bar. Uses only design-system tokens. */
+      .mag-bar {
+        position: relative;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: var(--s-3) 0 var(--s-2);
+      }
+      .mag-bar__fill {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width var(--transition);
+      }
+      .mag-scale {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--t-12);
+        color: var(--text-3);
+        font-variant-numeric: tabular-nums;
+      }
+      .mag-label {
+        font-size: var(--t-20);
+        font-weight: 500;
+        color: var(--accent);
+      }
     </style>
 </head>
 <body>
     <div class="theme-toggle">
-        <button id="theme-btn" class="theme-btn">
-            <span class="theme-icon">☀️</span>
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
         </button>
     </div>
 
-    <div class="container">
-        <a href="./" class="back-link">← back to all tools</a>
+    <main class="tool-shell">
+        <header class="tool-header">
+            <a href="./" class="tool-header__back">← all tools</a>
+            <h1>effect size calculator</h1>
+            <p class="tool-header__subtitle">cohen's d, hedges' g with hopkins magnitude thresholds</p>
+        </header>
 
-        <h1>effect size calculator</h1>
-        <p class="subtitle">cohen's d, hedges' g with hopkins magnitude thresholds</p>
-
-        <div class="mode-toggle">
-            <button class="mode-btn active" data-mode="independent" id="btn-independent">two groups</button>
-            <button class="mode-btn" data-mode="paired" id="btn-paired">pre-post</button>
-        </div>
+        <section class="tool-section">
+            <h2 class="tool-section__title">design</h2>
+            <div class="segmented" role="tablist">
+                <button class="segmented__btn" data-mode="independent" aria-pressed="true">two groups</button>
+                <button class="segmented__btn" data-mode="paired" aria-pressed="false">pre–post</button>
+            </div>
+        </section>
 
         <!-- Independent groups inputs -->
-        <div class="input-grid" id="inputs-independent">
-            <div class="group-header">group 1</div>
-            <div class="input-field">
-                <label>mean</label>
-                <input type="number" id="ind-m1" step="any" placeholder="0.00">
+        <section class="tool-section" id="inputs-independent">
+            <h2 class="tool-section__title">inputs — independent groups</h2>
+            <div class="input-grid">
+                <div class="input-grid__heading">group 1</div>
+                <div class="input-row">
+                    <label class="input-row__label" for="ind-m1">mean</label>
+                    <input class="field" type="number" id="ind-m1" step="any" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="ind-sd1">sd</label>
+                    <input class="field" type="number" id="ind-sd1" step="any" min="0" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row input-grid__full">
+                    <label class="input-row__label" for="ind-n1">n</label>
+                    <input class="field" type="number" id="ind-n1" step="1" min="2" placeholder="0" inputmode="numeric">
+                </div>
+                <div class="input-grid__heading">group 2</div>
+                <div class="input-row">
+                    <label class="input-row__label" for="ind-m2">mean</label>
+                    <input class="field" type="number" id="ind-m2" step="any" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="ind-sd2">sd</label>
+                    <input class="field" type="number" id="ind-sd2" step="any" min="0" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row input-grid__full">
+                    <label class="input-row__label" for="ind-n2">n</label>
+                    <input class="field" type="number" id="ind-n2" step="1" min="2" placeholder="0" inputmode="numeric">
+                </div>
             </div>
-            <div class="input-field">
-                <label>sd</label>
-                <input type="number" id="ind-sd1" step="any" min="0" placeholder="0.00">
-            </div>
-            <div class="input-field full-width">
-                <label>n</label>
-                <input type="number" id="ind-n1" step="1" min="2" placeholder="0">
-            </div>
-            <div class="group-header">group 2</div>
-            <div class="input-field">
-                <label>mean</label>
-                <input type="number" id="ind-m2" step="any" placeholder="0.00">
-            </div>
-            <div class="input-field">
-                <label>sd</label>
-                <input type="number" id="ind-sd2" step="any" min="0" placeholder="0.00">
-            </div>
-            <div class="input-field full-width">
-                <label>n</label>
-                <input type="number" id="ind-n2" step="1" min="2" placeholder="0">
-            </div>
-        </div>
+        </section>
 
         <!-- Paired inputs -->
-        <div class="input-grid" id="inputs-paired" style="display: none;">
-            <div class="input-field">
-                <label>mean pre</label>
-                <input type="number" id="pair-mpre" step="any" placeholder="0.00">
+        <section class="tool-section" id="inputs-paired" hidden>
+            <h2 class="tool-section__title">inputs — paired (pre–post)</h2>
+            <div class="input-grid">
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-mpre">mean pre</label>
+                    <input class="field" type="number" id="pair-mpre" step="any" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-sdpre">sd pre</label>
+                    <input class="field" type="number" id="pair-sdpre" step="any" min="0" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-mpost">mean post</label>
+                    <input class="field" type="number" id="pair-mpost" step="any" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-sdpost">sd post</label>
+                    <input class="field" type="number" id="pair-sdpost" step="any" min="0" placeholder="0.00" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-n">n</label>
+                    <input class="field" type="number" id="pair-n" step="1" min="2" placeholder="0" inputmode="numeric">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="pair-r">correlation (r)</label>
+                    <input class="field" type="number" id="pair-r" step="any" min="-1" max="1" value="0.5" inputmode="decimal">
+                </div>
             </div>
-            <div class="input-field">
-                <label>sd pre</label>
-                <input type="number" id="pair-sdpre" step="any" min="0" placeholder="0.00">
-            </div>
-            <div class="input-field">
-                <label>mean post</label>
-                <input type="number" id="pair-mpost" step="any" placeholder="0.00">
-            </div>
-            <div class="input-field">
-                <label>sd post</label>
-                <input type="number" id="pair-sdpost" step="any" min="0" placeholder="0.00">
-            </div>
-            <div class="input-field">
-                <label>n</label>
-                <input type="number" id="pair-n" step="1" min="2" placeholder="0">
-            </div>
-            <div class="input-field">
-                <label>correlation (r)</label>
-                <input type="number" id="pair-r" step="any" min="-1" max="1" placeholder="0.50" value="0.5">
-            </div>
-        </div>
+        </section>
 
-        <div class="results" id="results">
+        <section class="tool-section">
+            <h2 class="tool-section__title">results</h2>
             <div class="result-row">
-                <span class="result-label">Cohen's d</span>
-                <span class="result-value" id="res-d">—</span>
+                <span class="result-row__label">cohen's d</span>
+                <span class="result-row__value mono-nums" id="res-d">—</span>
             </div>
             <div class="result-row">
-                <span class="result-label">Hedges' g</span>
-                <span class="result-value" id="res-g">—</span>
+                <span class="result-row__label">hedges' g</span>
+                <span class="result-row__value mono-nums" id="res-g">—</span>
             </div>
             <div class="result-row">
-                <span class="result-label">95% CI</span>
-                <span class="result-value" id="res-ci">—</span>
+                <span class="result-row__label">95% CI</span>
+                <span class="result-row__value mono-nums" id="res-ci">—</span>
             </div>
-        </div>
+        </section>
 
-        <div class="magnitude-section" id="magnitude-section">
-            <div class="magnitude-label">hopkins magnitude</div>
-            <div class="magnitude-text" id="magnitude-text">—</div>
-            <div class="magnitude-bar-container">
-                <div class="magnitude-bar" id="magnitude-bar" style="width: 0%; background: var(--card-border);"></div>
+        <section class="tool-section">
+            <h2 class="tool-section__title">hopkins magnitude</h2>
+            <div class="result-card">
+                <div class="result-card__label">magnitude</div>
+                <div class="mag-label" id="magnitude-text">—</div>
+                <div class="mag-bar"><div class="mag-bar__fill" id="magnitude-bar"></div></div>
+                <div class="mag-scale">
+                    <span>0</span><span>0.2</span><span>0.6</span><span>1.2</span><span>2.0</span><span>4.0+</span>
+                </div>
             </div>
-            <div class="magnitude-scale">
-                <span>0</span>
-                <span>0.2</span>
-                <span>0.6</span>
-                <span>1.2</span>
-                <span>2.0</span>
-                <span>4.0+</span>
-            </div>
-
-            <table class="hopkins-table">
+            <table class="data-table" style="margin-top: var(--s-4);">
                 <thead>
-                    <tr><th>magnitude</th><th>threshold (d)</th></tr>
+                    <tr><th>magnitude</th><th class="num">threshold (|d|)</th></tr>
                 </thead>
                 <tbody id="hopkins-body">
-                    <tr data-mag="trivial"><td>trivial</td><td>&lt; 0.2</td></tr>
-                    <tr data-mag="small"><td>small</td><td>0.2 – 0.6</td></tr>
-                    <tr data-mag="moderate"><td>moderate</td><td>0.6 – 1.2</td></tr>
-                    <tr data-mag="large"><td>large</td><td>1.2 – 2.0</td></tr>
-                    <tr data-mag="very large"><td>very large</td><td>2.0 – 4.0</td></tr>
-                    <tr data-mag="extremely large"><td>extremely large</td><td>&gt; 4.0</td></tr>
+                    <tr data-mag="trivial"><td>trivial</td><td class="num">&lt; 0.2</td></tr>
+                    <tr data-mag="small"><td>small</td><td class="num">0.2 – 0.6</td></tr>
+                    <tr data-mag="moderate"><td>moderate</td><td class="num">0.6 – 1.2</td></tr>
+                    <tr data-mag="large"><td>large</td><td class="num">1.2 – 2.0</td></tr>
+                    <tr data-mag="very large"><td>very large</td><td class="num">2.0 – 4.0</td></tr>
+                    <tr data-mag="extremely large"><td>extremely large</td><td class="num">&gt; 4.0</td></tr>
                 </tbody>
             </table>
-        </div>
+            <div style="margin-top: var(--s-3);">
+                <button class="btn-download" type="button" id="download-csv">Download CSV</button>
+            </div>
+        </section>
 
-        <p class="privacy">all calculations happen locally in your browser</p>
-    </div>
+        <details class="method">
+            <summary class="method__summary">method</summary>
+            <div class="method__body">
+                <p><strong>Independent groups.</strong> Cohen's d uses the pooled standard deviation:</p>
+<pre>pooled_sd = sqrt( ((n1-1)·sd1² + (n2-1)·sd2²) / (n1+n2-2) )
+d         = (m1 - m2) / pooled_sd</pre>
+                <p><strong>Paired (pre–post).</strong> The pooled SD treats pre and post as independent (Cohen's d<sub>av</sub>):</p>
+<pre>pooled_sd = sqrt( (sd_pre² + sd_post²) / 2 )
+d         = (m_post - m_pre) / pooled_sd</pre>
+                <p><strong>Hedges' g.</strong> Bias correction for small samples:</p>
+<pre>g = d · (1 - 3 / (4·df - 1))    where df = n1 + n2 - 2</pre>
+                <p><strong>95% confidence interval.</strong> Approximate standard error:</p>
+<pre>SE  = sqrt( (n1+n2) / (n1·n2) + d² / (2·(n1+n2)) )
+CI  = d ± 1.96 · SE</pre>
+                <p><strong>Magnitude thresholds.</strong> Hopkins (2002) sport science convention: trivial &lt; 0.2, small 0.2–0.6, moderate 0.6–1.2, large 1.2–2.0, very large 2.0–4.0, extremely large &gt; 4.0.</p>
+                <ul>
+                    <li>Hopkins WG. A scale of magnitudes for effect statistics. <em>Sportscience</em>, 2002.</li>
+                    <li>Lakens D. Calculating and reporting effect sizes. <em>Front Psychol</em>, 2013.</li>
+                </ul>
+            </div>
+        </details>
+
+        <footer class="tool-footer">
+            <a href="./">all tools</a> · <a href="colophon.html">colophon</a>
+        </footer>
+    </main>
 
     <script>
+      (function () {
         let mode = 'independent';
+        let last = null;
 
-        // Mode toggle
-        document.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                mode = btn.dataset.mode;
-                document.getElementById('inputs-independent').style.display = mode === 'independent' ? 'grid' : 'none';
-                document.getElementById('inputs-paired').style.display = mode === 'paired' ? 'grid' : 'none';
-                calculate();
+        const modeButtons = document.querySelectorAll('.segmented__btn');
+        const indSection  = document.getElementById('inputs-independent');
+        const pairSection = document.getElementById('inputs-paired');
+
+        modeButtons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            mode = btn.dataset.mode;
+            modeButtons.forEach(function (b) {
+              b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
             });
+            indSection.hidden  = mode !== 'independent';
+            pairSection.hidden = mode !== 'paired';
+            compute();
+          });
         });
 
         function getHopkins(absD) {
-            if (absD < 0.2) return { label: 'trivial', color: '#666666', pct: (absD / 0.2) * 5 };
-            if (absD < 0.6) return { label: 'small', color: '#7ae2cf', pct: 5 + ((absD - 0.2) / 0.4) * 20 };
-            if (absD < 1.2) return { label: 'moderate', color: '#5dd4c4', pct: 25 + ((absD - 0.6) / 0.6) * 25 };
-            if (absD < 2.0) return { label: 'large', color: '#f4a261', pct: 50 + ((absD - 1.2) / 0.8) * 25 };
-            if (absD < 4.0) return { label: 'very large', color: '#e76f51', pct: 75 + ((absD - 2.0) / 2.0) * 20 };
-            return { label: 'extremely large', color: '#e63946', pct: 100 };
-        }
-
-        function calculate() {
-            let d, n1, n2;
-
-            if (mode === 'independent') {
-                const m1 = parseFloat(document.getElementById('ind-m1').value);
-                const sd1 = parseFloat(document.getElementById('ind-sd1').value);
-                n1 = parseInt(document.getElementById('ind-n1').value);
-                const m2 = parseFloat(document.getElementById('ind-m2').value);
-                const sd2 = parseFloat(document.getElementById('ind-sd2').value);
-                n2 = parseInt(document.getElementById('ind-n2').value);
-
-                if ([m1, sd1, n1, m2, sd2, n2].some(v => isNaN(v)) || sd1 <= 0 || sd2 <= 0 || n1 < 2 || n2 < 2) {
-                    clearResults();
-                    return;
-                }
-
-                const pooledSD = Math.sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / (n1 + n2 - 2));
-                d = (m1 - m2) / pooledSD;
-            } else {
-                const mpre = parseFloat(document.getElementById('pair-mpre').value);
-                const sdpre = parseFloat(document.getElementById('pair-sdpre').value);
-                const mpost = parseFloat(document.getElementById('pair-mpost').value);
-                const sdpost = parseFloat(document.getElementById('pair-sdpost').value);
-                const n = parseInt(document.getElementById('pair-n').value);
-                const r = parseFloat(document.getElementById('pair-r').value);
-
-                if ([mpre, sdpre, mpost, sdpost, n, r].some(v => isNaN(v)) || sdpre <= 0 || sdpost <= 0 || n < 2) {
-                    clearResults();
-                    return;
-                }
-
-                const pooledSD = Math.sqrt((sdpre * sdpre + sdpost * sdpost) / 2);
-                d = (mpost - mpre) / pooledSD;
-                n1 = n;
-                n2 = n;
-            }
-
-            const totalN = n1 + n2;
-            const df = totalN - 2;
-
-            // Hedges' g correction factor
-            const cf = 1 - (3 / (4 * df - 1));
-            const g = d * cf;
-
-            // Approximate SE for d
-            const se = Math.sqrt(totalN / (n1 * n2) + (d * d) / (2 * totalN));
-            const ciLow = d - 1.96 * se;
-            const ciHigh = d + 1.96 * se;
-
-            document.getElementById('res-d').textContent = d.toFixed(3);
-            document.getElementById('res-g').textContent = g.toFixed(3);
-            document.getElementById('res-ci').textContent = `[${ciLow.toFixed(3)}, ${ciHigh.toFixed(3)}]`;
-
-            const absD = Math.abs(d);
-            const hopkins = getHopkins(absD);
-
-            document.getElementById('magnitude-text').textContent = hopkins.label;
-            document.getElementById('magnitude-text').style.color = hopkins.color;
-
-            const bar = document.getElementById('magnitude-bar');
-            bar.style.width = Math.min(hopkins.pct, 100) + '%';
-            bar.style.background = hopkins.color;
-
-            // Highlight active row
-            document.querySelectorAll('#hopkins-body tr').forEach(row => {
-                row.classList.toggle('active-row', row.dataset.mag === hopkins.label);
-            });
+          if (absD < 0.2) return { label: 'trivial',         pct: (absD / 0.2) * (100/6) };
+          if (absD < 0.6) return { label: 'small',           pct: (100/6) + ((absD - 0.2) / 0.4) * (100/6) };
+          if (absD < 1.2) return { label: 'moderate',        pct: (200/6) + ((absD - 0.6) / 0.6) * (100/6) };
+          if (absD < 2.0) return { label: 'large',           pct: (300/6) + ((absD - 1.2) / 0.8) * (100/6) };
+          if (absD < 4.0) return { label: 'very large',      pct: (400/6) + ((absD - 2.0) / 2.0) * (100/6) };
+          return             { label: 'extremely large', pct: 100 };
         }
 
         function clearResults() {
-            document.getElementById('res-d').textContent = '—';
-            document.getElementById('res-g').textContent = '—';
-            document.getElementById('res-ci').textContent = '—';
-            document.getElementById('magnitude-text').textContent = '—';
-            document.getElementById('magnitude-text').style.color = 'var(--text-color)';
-            document.getElementById('magnitude-bar').style.width = '0%';
-            document.querySelectorAll('#hopkins-body tr').forEach(row => row.classList.remove('active-row'));
+          ['res-d', 'res-g', 'res-ci', 'magnitude-text'].forEach(function (id) {
+            document.getElementById(id).textContent = '—';
+          });
+          document.getElementById('magnitude-bar').style.width = '0%';
+          document.querySelectorAll('#hopkins-body tr').forEach(function (tr) {
+            tr.classList.remove('is-active');
+          });
+          last = null;
         }
 
-        // Attach listeners to all inputs
-        document.querySelectorAll('input[type="number"]').forEach(input => {
-            input.addEventListener('input', calculate);
-        });
+        function compute() {
+          let d, n1, n2, inputs;
 
-        // Theme toggle
-        const themeBtn = document.getElementById('theme-btn');
-        const themeIcon = themeBtn.querySelector('.theme-icon');
-        const html = document.documentElement;
-        const themes = ['dark', 'light'];
-        let themeIndex = themes.indexOf(localStorage.getItem('theme') || 'dark');
-        if (themeIndex < 0) themeIndex = 0;
+          if (mode === 'independent') {
+            const m1  = parseFloat(document.getElementById('ind-m1').value);
+            const sd1 = parseFloat(document.getElementById('ind-sd1').value);
+            n1        = parseInt(document.getElementById('ind-n1').value, 10);
+            const m2  = parseFloat(document.getElementById('ind-m2').value);
+            const sd2 = parseFloat(document.getElementById('ind-sd2').value);
+            n2        = parseInt(document.getElementById('ind-n2').value, 10);
 
-        function applyTheme() {
-            html.className = themes[themeIndex];
-            themeIcon.textContent = themes[themeIndex] === 'light' ? '☀️' : '🌙';
-            localStorage.setItem('theme', themes[themeIndex]);
+            if ([m1, sd1, n1, m2, sd2, n2].some(function (v) { return isNaN(v); })
+                || sd1 <= 0 || sd2 <= 0 || n1 < 2 || n2 < 2) {
+              clearResults();
+              return;
+            }
+            const pooledSD = Math.sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / (n1 + n2 - 2));
+            d = (m1 - m2) / pooledSD;
+            inputs = { mode: 'independent', m1: m1, sd1: sd1, n1: n1, m2: m2, sd2: sd2, n2: n2 };
+          } else {
+            const mpre   = parseFloat(document.getElementById('pair-mpre').value);
+            const sdpre  = parseFloat(document.getElementById('pair-sdpre').value);
+            const mpost  = parseFloat(document.getElementById('pair-mpost').value);
+            const sdpost = parseFloat(document.getElementById('pair-sdpost').value);
+            const n      = parseInt(document.getElementById('pair-n').value, 10);
+            const r      = parseFloat(document.getElementById('pair-r').value);
+
+            if ([mpre, sdpre, mpost, sdpost, n, r].some(function (v) { return isNaN(v); })
+                || sdpre <= 0 || sdpost <= 0 || n < 2) {
+              clearResults();
+              return;
+            }
+            const pooledSD = Math.sqrt((sdpre * sdpre + sdpost * sdpost) / 2);
+            d = (mpost - mpre) / pooledSD;
+            n1 = n; n2 = n;
+            inputs = { mode: 'paired', mean_pre: mpre, sd_pre: sdpre, mean_post: mpost, sd_post: sdpost, n: n, r: r };
+          }
+
+          const totalN = n1 + n2;
+          const df     = totalN - 2;
+          const cf     = 1 - (3 / (4 * df - 1));
+          const g      = d * cf;
+          const se     = Math.sqrt(totalN / (n1 * n2) + (d * d) / (2 * totalN));
+          const ciLow  = d - 1.96 * se;
+          const ciHigh = d + 1.96 * se;
+
+          document.getElementById('res-d').textContent  = Tools.fmt.fixed(d, 3);
+          document.getElementById('res-g').textContent  = Tools.fmt.fixed(g, 3);
+          document.getElementById('res-ci').textContent = '[' + Tools.fmt.fixed(ciLow, 3) + ', ' + Tools.fmt.fixed(ciHigh, 3) + ']';
+
+          const absD    = Math.abs(d);
+          const hopkins = getHopkins(absD);
+          document.getElementById('magnitude-text').textContent = hopkins.label;
+          document.getElementById('magnitude-bar').style.width  = Math.min(hopkins.pct, 100) + '%';
+
+          document.querySelectorAll('#hopkins-body tr').forEach(function (tr) {
+            tr.classList.toggle('is-active', tr.dataset.mag === hopkins.label);
+          });
+
+          last = {
+            inputs: inputs,
+            d: d, g: g, ci_low: ciLow, ci_high: ciHigh, magnitude: hopkins.label
+          };
         }
 
-        themeBtn.addEventListener('click', () => {
-            themeIndex = (themeIndex + 1) % themes.length;
-            applyTheme();
+        document.querySelectorAll('input[type="number"]').forEach(function (el) {
+          el.addEventListener('input', compute);
         });
 
-        applyTheme();
+        document.getElementById('download-csv').addEventListener('click', function () {
+          if (!last) return;
+          const row = Object.assign({}, last.inputs, {
+            cohen_d:    Number(Tools.fmt.fixed(last.d, 4)),
+            hedges_g:   Number(Tools.fmt.fixed(last.g, 4)),
+            ci_low:     Number(Tools.fmt.fixed(last.ci_low, 4)),
+            ci_high:    Number(Tools.fmt.fixed(last.ci_high, 4)),
+            magnitude:  last.magnitude
+          });
+          Tools.csv.download('effect-size.csv', [row]);
+        });
+
+        compute();
+      })();
     </script>
 </body>
 </html>

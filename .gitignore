@@ -1,0 +1,11 @@
+# Working roadmap — kept local, not published
+performance-tools-roadmap.md
+
+# Temporary test scaffolding
+/assets/_test.html
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

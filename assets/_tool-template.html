@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- =============================================================
+     Canonical starting point for new tools.
+     Copy this file to /<tool-slug>.html, then:
+       1. Edit <title>, <meta name="description">, favicon emoji.
+       2. Fill in h1, subtitle, and the input/result/method slots.
+       3. Register the tool in /index.html under the right category.
+     Keep CSS classes to those documented in DESIGN.md.
+     ============================================================= -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOOL NAME — sport science tools</title>
+    <meta name="description" content="TODO one-sentence description of what the tool does.">
+    <meta property="og:title" content="TOOL NAME — sport science tools">
+    <meta property="og:description" content="TODO one-sentence description.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
+        </button>
+    </div>
+
+    <main class="tool-shell">
+        <header class="tool-header">
+            <a href="./" class="tool-header__back">← all tools</a>
+            <h1>tool name</h1>
+            <p class="tool-header__subtitle">one line describing what this tool does</p>
+        </header>
+
+        <!-- INPUTS -------------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">inputs</h2>
+            <!-- TODO: inputs. Use .input-row / .field / .input-grid / .segmented -->
+        </section>
+
+        <!-- RESULTS ------------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">results</h2>
+            <!-- TODO: .result-grid or .result-row cards, plus .btn-download if tabular -->
+        </section>
+
+        <!-- CHART (remove if not needed) ---------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">chart</h2>
+            <div class="chart" id="chart"></div>
+            <!-- In script: Tools.chart.line(document.getElementById('chart'), series, opts) -->
+        </section>
+
+        <!-- METHOD -------------------------------------------------- -->
+        <details class="method">
+            <summary class="method__summary">method, defaults, references</summary>
+            <div class="method__body">
+                <p>TODO: short prose on what the tool does and why the defaults are chosen.</p>
+                <pre>TODO: one or two equations</pre>
+                <ul>
+                    <li>TODO: reference 1</li>
+                    <li>TODO: reference 2</li>
+                </ul>
+            </div>
+        </details>
+
+        <footer class="tool-footer">
+            <a href="./">all tools</a> · <a href="colophon.html">colophon</a>
+        </footer>
+    </main>
+
+    <script>
+      (function () {
+        // TODO: compute() function reads inputs, writes outputs.
+        // Wire listeners on all inputs and call compute() on change.
+        // Example:
+        // document.querySelectorAll('input, select').forEach(function (el) {
+        //   el.addEventListener('input', compute);
+        // });
+        // compute();
+      })();
+    </script>
+</body>
+</html>

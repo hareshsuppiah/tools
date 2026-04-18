@@ -1,117 +1,142 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sport science tools — haresh suppiah</title>
-    <meta name="description" content="Browser-based tools for sport scientists, researchers, and coaches. All tools run locally — no data leaves your device.">
+    <meta name="description" content="Small, single-purpose calculators for sport science, S&C, rehab, and self-coached athletes.">
     <meta property="og:title" content="sport science tools — haresh suppiah">
-    <meta property="og:description" content="Browser-based tools for sport scientists, researchers, and coaches.">
+    <meta property="og:description" content="Small, single-purpose calculators for sport science, S&C, rehab, and self-coached athletes.">
     <meta property="og:url" content="https://hareshsuppiah.github.io/tools/">
     <meta property="og:type" content="website">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
 </head>
 <body>
     <div class="theme-toggle">
-        <button id="theme-btn" class="theme-btn">
-            <span class="theme-icon">☀️</span>
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
         </button>
-        <div id="theme-dropdown" class="theme-dropdown">
-            <div class="theme-option" data-theme="light">☀️ light</div>
-            <div class="theme-option" data-theme="dark">🌙 dark</div>
-            <div class="theme-option" data-theme="system">💻 system</div>
-        </div>
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1 class="site-title">sport science tools</h1>
-            <p class="site-tagline">a collection of browser-based tools for sport scientists, researchers, and coaches. all tools run locally in your browser — no data leaves your device.</p>
-            <p class="site-attribution">built by <a href="https://hareshsuppiah.com">haresh suppiah</a></p>
-        </div>
+    <main class="tool-shell">
+        <header class="landing-header">
+            <h1 class="landing-header__title">sport science tools</h1>
+            <p class="landing-header__tagline">small, single-purpose calculators for sport science, S&C, rehab, and self-coached athletes. built by <a href="https://hareshsuppiah.com">haresh suppiah</a>.</p>
+        </header>
 
-        <div class="category">
-            <h2 class="category-title">calculators & converters</h2>
+        <section class="category">
+            <h2 class="category__title">calculators & converters</h2>
             <div class="tool-list">
                 <a href="sprint-speed-calculator.html" class="tool-card">
-                    <span class="tool-icon">⚡</span>
-                    <div class="tool-content">
-                        <div class="tool-title">sprint speed calculator</div>
-                        <div class="tool-subtitle">convert between m/s, km/h, mph and calculate split times</div>
+                    <span class="tool-card__icon">⚡</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">sprint speed calculator</div>
+                        <div class="tool-card__subtitle">convert between m/s, km/h, mph and calculate split times</div>
                     </div>
                 </a>
                 <a href="effect-size-calculator.html" class="tool-card">
-                    <span class="tool-icon">📊</span>
-                    <div class="tool-content">
-                        <div class="tool-title">effect size calculator</div>
-                        <div class="tool-subtitle">cohen's d, hedges' g with hopkins magnitude thresholds</div>
+                    <span class="tool-card__icon">📊</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">effect size calculator</div>
+                        <div class="tool-card__subtitle">cohen's d, hedges' g with hopkins magnitude thresholds</div>
                     </div>
                 </a>
             </div>
-        </div>
+        </section>
 
-        <div class="category">
-            <h2 class="category-title">data & visualization</h2>
-            <p class="coming-soon">coming soon</p>
-        </div>
+        <section class="category">
+            <h2 class="category__title">planned — training load & monitoring</h2>
+            <div class="tool-list">
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">ewma training load monitor</div>
+                        <div class="tool-card__subtitle">acute:chronic load with ewma and uncoupled ratios</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">hrv rolling baseline</div>
+                        <div class="tool-card__subtitle">recompute hrv baseline from raw rmssd, with swc bands</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="category">
-            <h2 class="category-title">assessment & testing</h2>
-            <p class="coming-soon">coming soon</p>
-        </div>
+        <section class="category">
+            <h2 class="category__title">planned — performance profiling</h2>
+            <div class="tool-list">
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">load–velocity profile</div>
+                        <div class="tool-card__subtitle">vbt linear fit, 1rm estimate, %1rm load table</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">mas / mss / asr calculator</div>
+                        <div class="tool-card__subtitle">maximal aerobic & sprint speed, session prescriptions</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">samozino sprint fv profile</div>
+                        <div class="tool-card__subtitle">v0, f0, pmax from split times with environmental corrections</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">critical speed / power model</div>
+                        <div class="tool-card__subtitle">two- and three-parameter hyperbolic fit, d' balance</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="category">
-            <h2 class="category-title">text & writing</h2>
-            <p class="coming-soon">coming soon</p>
-        </div>
+        <section class="category">
+            <h2 class="category__title">planned — clinical & health</h2>
+            <div class="tool-list">
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">return-to-play asymmetry dashboard</div>
+                        <div class="tool-card__subtitle">lsi + efi with masking flags across a test battery</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">energy availability / red-s screener</div>
+                        <div class="tool-card__subtitle">ea per kg ffm with ioc clinical thresholds</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">skinfold body composition</div>
+                        <div class="tool-card__subtitle">jackson-pollock 3 & 7, durnin-womersley</div>
+                    </div>
+                </div>
+                <div class="tool-card tool-card--planned">
+                    <span class="tool-card__icon">·</span>
+                    <div class="tool-card__content">
+                        <div class="tool-card__title">smallest worthwhile change</div>
+                        <div class="tool-card__subtitle">cv- and sd-based swc bands for repeated measures</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="footer">
-            <p><a href="colophon.html">colophon</a> · <a href="https://github.com/hareshsuppiah/tools">source on github</a></p>
-        </div>
-    </div>
-
-    <script>
-        const themeBtn = document.getElementById('theme-btn');
-        const themeDropdown = document.getElementById('theme-dropdown');
-        const themeIcon = themeBtn.querySelector('.theme-icon');
-        const html = document.documentElement;
-
-        const icons = { light: '☀️', dark: '🌙', system: '💻' };
-
-        function getSystemTheme() {
-            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-        }
-
-        function applyTheme(setting) {
-            const resolved = setting === 'system' ? getSystemTheme() : setting;
-            html.className = resolved;
-            themeIcon.textContent = icons[setting];
-            localStorage.setItem('theme', setting);
-        }
-
-        themeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            themeDropdown.classList.toggle('active');
-        });
-
-        document.querySelectorAll('.theme-option').forEach(option => {
-            option.addEventListener('click', () => {
-                applyTheme(option.dataset.theme);
-                themeDropdown.classList.remove('active');
-            });
-        });
-
-        document.addEventListener('click', () => {
-            themeDropdown.classList.remove('active');
-        });
-
-        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-            if (localStorage.getItem('theme') === 'system') applyTheme('system');
-        });
-
-        const saved = localStorage.getItem('theme') || 'dark';
-        applyTheme(saved);
-    </script>
+        <footer class="tool-footer">
+            <a href="colophon.html">colophon</a> · <a href="https://github.com/hareshsuppiah/tools">source on github</a>
+        </footer>
+    </main>
 </body>
 </html>

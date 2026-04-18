@@ -1,369 +1,194 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sprint speed calculator — sport science tools</title>
     <meta name="description" content="Convert between m/s, km/h, mph, min/km, min/mile and calculate sprint split times.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --text-secondary: #aaaaaa;
-            --accent-color: #7ae2cf;
-            --accent-hover: #5dd4c4;
-            --card-bg: #1a1a1a;
-            --card-border: #333333;
-            --input-bg: #111111;
-            --input-border: #333333;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        [class="light"] {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --text-secondary: #666666;
-            --accent-color: #5dd4c4;
-            --accent-hover: #4bc2b8;
-            --card-bg: #f5f5f5;
-            --card-border: #e0e0e0;
-            --input-bg: #ffffff;
-            --input-border: #cccccc;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            transition: var(--transition);
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .back-link {
-            display: inline-block;
-            color: var(--accent-color);
-            text-decoration: none;
-            font-size: 0.85rem;
-            margin-bottom: 2rem;
-        }
-
-        .back-link:hover { text-decoration: underline; }
-
-        h1 {
-            font-size: 1.6rem;
-            font-weight: 400;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-bottom: 2rem;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        input[type="number"] {
-            flex: 1;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: var(--text-color);
-            font-family: inherit;
-            font-size: 1.1rem;
-            transition: var(--transition);
-        }
-
-        input[type="number"]:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        select {
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: var(--text-color);
-            font-family: inherit;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        select:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .results {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .result-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 1rem;
-        }
-
-        .result-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-        }
-
-        .result-value {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: var(--accent-color);
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-            text-align: center;
-            position: relative;
-        }
-
-        .section-title::before,
-        .section-title::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 60px;
-            height: 1px;
-            background: var(--card-border);
-        }
-
-        .section-title::before { left: 0; }
-        .section-title::after { right: 0; }
-
-        .splits {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .split-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            text-align: center;
-        }
-
-        .split-distance {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .split-time {
-            font-size: 1rem;
-            font-weight: 500;
-            color: var(--accent-color);
-        }
-
-        .privacy {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            opacity: 0.6;
-            margin-top: 2rem;
-        }
-
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        .theme-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .theme-icon { font-size: 1.2rem; }
-
-        @media (max-width: 480px) {
-            .results { grid-template-columns: 1fr; }
-            .splits { grid-template-columns: repeat(2, 1fr); }
-            .input-group { flex-direction: column; }
-            h1 { font-size: 1.3rem; }
-            .theme-toggle { top: 1rem; right: 1rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
 </head>
 <body>
     <div class="theme-toggle">
-        <button id="theme-btn" class="theme-btn">
-            <span class="theme-icon">☀️</span>
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
         </button>
     </div>
 
-    <div class="container">
-        <a href="./" class="back-link">← back to all tools</a>
+    <main class="tool-shell">
+        <header class="tool-header">
+            <a href="./" class="tool-header__back">← all tools</a>
+            <h1>sprint speed calculator</h1>
+            <p class="tool-header__subtitle">convert between speed units and calculate split times</p>
+        </header>
 
-        <h1>sprint speed calculator</h1>
-        <p class="subtitle">convert between speed units and calculate split times</p>
+        <section class="tool-section">
+            <h2 class="tool-section__title">input</h2>
+            <div class="input-row">
+                <label class="input-row__label" for="speed-input">speed</label>
+                <div class="field-group">
+                    <input class="field" type="number" id="speed-input" placeholder="enter speed" step="any" min="0" inputmode="decimal">
+                    <select class="field" id="unit-select" style="flex:0 0 auto; width:auto;">
+                        <option value="ms">m/s</option>
+                        <option value="kmh">km/h</option>
+                        <option value="mph">mph</option>
+                        <option value="minkm">min/km</option>
+                        <option value="minmi">min/mile</option>
+                    </select>
+                </div>
+            </div>
+        </section>
 
-        <div class="input-group">
-            <input type="number" id="speed-input" placeholder="enter speed" step="any" min="0">
-            <select id="unit-select">
-                <option value="ms">m/s</option>
-                <option value="kmh">km/h</option>
-                <option value="mph">mph</option>
-                <option value="minkm">min/km</option>
-                <option value="minmi">min/mile</option>
-            </select>
-        </div>
+        <section class="tool-section">
+            <h2 class="tool-section__title">conversions</h2>
+            <div class="result-grid">
+                <div class="result-card">
+                    <div class="result-card__label">m/s</div>
+                    <div class="result-card__value mono-nums" id="res-ms">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card__label">km/h</div>
+                    <div class="result-card__value mono-nums" id="res-kmh">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card__label">mph</div>
+                    <div class="result-card__value mono-nums" id="res-mph">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card__label">min/km</div>
+                    <div class="result-card__value mono-nums" id="res-minkm">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card__label">min/mile</div>
+                    <div class="result-card__value mono-nums" id="res-minmi">—</div>
+                </div>
+            </div>
+        </section>
 
-        <div class="results" id="results">
-            <div class="result-card">
-                <div class="result-label">m/s</div>
-                <div class="result-value" id="res-ms">—</div>
+        <section class="tool-section">
+            <h2 class="tool-section__title">split times</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>distance</th>
+                        <th class="num">time</th>
+                    </tr>
+                </thead>
+                <tbody id="splits-body">
+                    <tr><td>10 m</td><td class="num" id="split-10">—</td></tr>
+                    <tr><td>20 m</td><td class="num" id="split-20">—</td></tr>
+                    <tr><td>30 m</td><td class="num" id="split-30">—</td></tr>
+                    <tr><td>40 m</td><td class="num" id="split-40">—</td></tr>
+                    <tr><td>60 m</td><td class="num" id="split-60">—</td></tr>
+                    <tr><td>100 m</td><td class="num" id="split-100">—</td></tr>
+                </tbody>
+            </table>
+            <div style="margin-top: var(--s-3);">
+                <button class="btn-download" type="button" id="download-csv">Download CSV</button>
             </div>
-            <div class="result-card">
-                <div class="result-label">km/h</div>
-                <div class="result-value" id="res-kmh">—</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">mph</div>
-                <div class="result-value" id="res-mph">—</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">min/km</div>
-                <div class="result-value" id="res-minkm">—</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">min/mile</div>
-                <div class="result-value" id="res-minmi">—</div>
-            </div>
-        </div>
+        </section>
 
-        <h2 class="section-title">split times</h2>
-        <div class="splits" id="splits">
-            <div class="split-card"><div class="split-distance">10 m</div><div class="split-time" id="split-10">—</div></div>
-            <div class="split-card"><div class="split-distance">20 m</div><div class="split-time" id="split-20">—</div></div>
-            <div class="split-card"><div class="split-distance">30 m</div><div class="split-time" id="split-30">—</div></div>
-            <div class="split-card"><div class="split-distance">40 m</div><div class="split-time" id="split-40">—</div></div>
-            <div class="split-card"><div class="split-distance">60 m</div><div class="split-time" id="split-60">—</div></div>
-            <div class="split-card"><div class="split-distance">100 m</div><div class="split-time" id="split-100">—</div></div>
-        </div>
+        <details class="method">
+            <summary class="method__summary">method</summary>
+            <div class="method__body">
+                <p>All values are derived from a single internal representation in metres per second.</p>
+<pre>m/s      = input (or converted from km/h, mph, or pace)
+km/h     = m/s × 3.6
+mph      = m/s / 0.44704
+min/km   = 1000 / m/s / 60     (as M:SS)
+min/mile = 1609.344 / m/s / 60 (as M:SS)
+split(d) = d / m/s             (seconds)</pre>
+                <p>1 mile = 1609.344 m, 1 mph = 0.44704 m/s.</p>
+            </div>
+        </details>
 
-        <p class="privacy">all calculations happen locally in your browser</p>
-    </div>
+        <footer class="tool-footer">
+            <a href="./">all tools</a> · <a href="colophon.html">colophon</a>
+        </footer>
+    </main>
 
     <script>
-        const speedInput = document.getElementById('speed-input');
-        const unitSelect = document.getElementById('unit-select');
+      (function () {
+        const speedInput  = document.getElementById('speed-input');
+        const unitSelect  = document.getElementById('unit-select');
+        const downloadBtn = document.getElementById('download-csv');
+        const DISTS = [10, 20, 30, 40, 60, 100];
 
         function toMs(value, unit) {
-            switch (unit) {
-                case 'ms': return value;
-                case 'kmh': return value / 3.6;
-                case 'mph': return value * 0.44704;
-                case 'minkm': return value > 0 ? 1000 / (value * 60) : 0;
-                case 'minmi': return value > 0 ? 1609.344 / (value * 60) : 0;
-                default: return value;
-            }
+          switch (unit) {
+            case 'ms':    return value;
+            case 'kmh':   return value / 3.6;
+            case 'mph':   return value * 0.44704;
+            case 'minkm': return value > 0 ? 1000 / (value * 60) : 0;
+            case 'minmi': return value > 0 ? 1609.344 / (value * 60) : 0;
+            default:      return value;
+          }
         }
 
-        function formatPace(totalMinutes) {
-            if (!isFinite(totalMinutes) || totalMinutes <= 0) return '—';
-            const mins = Math.floor(totalMinutes);
-            const secs = Math.round((totalMinutes - mins) * 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
+        let lastState = null;
 
-        function calculate() {
-            const raw = parseFloat(speedInput.value);
-            if (isNaN(raw) || raw <= 0) {
-                document.querySelectorAll('.result-value, .split-time').forEach(el => el.textContent = '—');
-                return;
-            }
-
-            const ms = toMs(raw, unitSelect.value);
-            const kmh = ms * 3.6;
-            const mph = ms / 0.44704;
-            const minkm = ms > 0 ? (1000 / ms) / 60 : 0;
-            const minmi = ms > 0 ? (1609.344 / ms) / 60 : 0;
-
-            document.getElementById('res-ms').textContent = ms.toFixed(2);
-            document.getElementById('res-kmh').textContent = kmh.toFixed(2);
-            document.getElementById('res-mph').textContent = mph.toFixed(2);
-            document.getElementById('res-minkm').textContent = formatPace(minkm);
-            document.getElementById('res-minmi').textContent = formatPace(minmi);
-
-            [10, 20, 30, 40, 60, 100].forEach(d => {
-                const time = ms > 0 ? d / ms : 0;
-                document.getElementById(`split-${d}`).textContent = time > 0 ? time.toFixed(2) + 's' : '—';
+        function compute() {
+          const raw = parseFloat(speedInput.value);
+          if (!isFinite(raw) || raw <= 0) {
+            document.querySelectorAll('.result-card__value, td.num').forEach(function (el) {
+              el.textContent = '—';
             });
+            lastState = null;
+            return;
+          }
+
+          const ms    = toMs(raw, unitSelect.value);
+          const kmh   = ms * 3.6;
+          const mph   = ms / 0.44704;
+          const minkm = ms > 0 ? (1000 / ms) / 60 : 0;
+          const minmi = ms > 0 ? (1609.344 / ms) / 60 : 0;
+
+          document.getElementById('res-ms').textContent    = Tools.fmt.fixed(ms, 2);
+          document.getElementById('res-kmh').textContent   = Tools.fmt.fixed(kmh, 2);
+          document.getElementById('res-mph').textContent   = Tools.fmt.fixed(mph, 2);
+          document.getElementById('res-minkm').textContent = Tools.fmt.pace(minkm);
+          document.getElementById('res-minmi').textContent = Tools.fmt.pace(minmi);
+
+          const splits = {};
+          DISTS.forEach(function (d) {
+            const t = ms > 0 ? d / ms : 0;
+            splits[d] = t;
+            document.getElementById('split-' + d).textContent = t > 0 ? Tools.fmt.fixed(t, 2) + 's' : '—';
+          });
+
+          lastState = {
+            input:    raw,
+            unit:     unitSelect.value,
+            ms:       ms,
+            kmh:      kmh,
+            mph:      mph,
+            minkm:    minkm,
+            minmi:    minmi,
+            splits:   splits
+          };
         }
 
-        speedInput.addEventListener('input', calculate);
-        unitSelect.addEventListener('change', calculate);
-
-        // Theme toggle
-        const themeBtn = document.getElementById('theme-btn');
-        const themeIcon = themeBtn.querySelector('.theme-icon');
-        const html = document.documentElement;
-        const themes = ['dark', 'light'];
-        let themeIndex = themes.indexOf(localStorage.getItem('theme') || 'dark');
-        if (themeIndex < 0) themeIndex = 0;
-
-        function applyTheme() {
-            html.className = themes[themeIndex];
-            themeIcon.textContent = themes[themeIndex] === 'light' ? '☀️' : '🌙';
-            localStorage.setItem('theme', themes[themeIndex]);
-        }
-
-        themeBtn.addEventListener('click', () => {
-            themeIndex = (themeIndex + 1) % themes.length;
-            applyTheme();
+        downloadBtn.addEventListener('click', function () {
+          if (!lastState) return;
+          const rows = [
+            { field: 'input',     value: lastState.input, unit: lastState.unit },
+            { field: 'm_per_s',   value: Number(Tools.fmt.fixed(lastState.ms, 4)), unit: 'm/s' },
+            { field: 'km_per_h',  value: Number(Tools.fmt.fixed(lastState.kmh, 4)), unit: 'km/h' },
+            { field: 'mph',       value: Number(Tools.fmt.fixed(lastState.mph, 4)), unit: 'mph' },
+            { field: 'min_per_km', value: Tools.fmt.pace(lastState.minkm), unit: 'min/km' },
+            { field: 'min_per_mile', value: Tools.fmt.pace(lastState.minmi), unit: 'min/mile' }
+          ];
+          DISTS.forEach(function (d) {
+            rows.push({ field: 'split_' + d + 'm_s', value: Number(Tools.fmt.fixed(lastState.splits[d], 4)), unit: 's' });
+          });
+          Tools.csv.download('sprint-speed.csv', rows);
         });
 
-        applyTheme();
+        speedInput.addEventListener('input', compute);
+        unitSelect.addEventListener('change', compute);
+        compute();
+      })();
     </script>
 </body>
 </html>
