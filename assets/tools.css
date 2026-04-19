@@ -463,6 +463,13 @@ details summary::-webkit-details-marker {
   stroke-dasharray: 4 3;
 }
 
+.chart-series--tertiary {
+  stroke: var(--text-3);
+  stroke-dasharray: 1 3;
+  stroke-width: 1.5;
+  fill: none;
+}
+
 .chart-band {
   fill: var(--accent);
   fill-opacity: 0.08;

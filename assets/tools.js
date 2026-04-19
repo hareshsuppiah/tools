@@ -229,6 +229,21 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   };
 
+  // Match a column name from a list of candidates, ignoring case,
+  // whitespace, underscores, and hyphens. Returns the actual column
+  // string from `columns`, or null if no match.
+  csv.findColumn = function (columns, candidates) {
+    if (!columns || !candidates) return null;
+    const norm = function (s) {
+      return String(s).toLowerCase().replace(/[\s_\-]+/g, '');
+    };
+    const want = candidates.map(norm);
+    for (let i = 0; i < columns.length; i++) {
+      if (want.indexOf(norm(columns[i])) >= 0) return columns[i];
+    }
+    return null;
+  };
+
   csv.dropzone = function (el, onParsed) {
     if (!el) return;
     const handleText = function (text) {
@@ -337,6 +352,117 @@
   };
 
   Tools.stats = stats;
+
+  /* ---------------------------------------------------------
+     Tools.dates — light date helpers for time-series tools
+     --------------------------------------------------------- */
+  const dates = {};
+  const MS_PER_DAY = 86400000;
+  const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun',
+                      'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Parse permissively. Accepts ISO YYYY-MM-DD (or YYYY/MM/DD), then
+  // anything Date.parse handles, then DD/MM/YYYY where the second
+  // field is > 12 (so the order is unambiguous). Returns a UTC-noon
+  // Date so day arithmetic is DST-safe, or null on failure.
+  dates.parse = function (s) {
+    if (s == null) return null;
+    const str = String(s).trim();
+    if (!str) return null;
+    let m;
+    // ISO-ish: YYYY-MM-DD or YYYY/MM/DD
+    m = /^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/.exec(str);
+    if (m) {
+      const y = +m[1], mo = +m[2], d = +m[3];
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        return new Date(Date.UTC(y, mo - 1, d, 12));
+      }
+    }
+    // DD/MM/YYYY where DD > 12 (unambiguous day-first)
+    m = /^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/.exec(str);
+    if (m) {
+      const a = +m[1], b = +m[2], y = +m[3];
+      if (a > 12 && b >= 1 && b <= 12) {
+        return new Date(Date.UTC(y, b - 1, a, 12));
+      }
+      // Otherwise prefer ISO-style interpretation: assume MM/DD/YYYY
+      // only if a <= 12 and b <= 12 — accept as MM/DD/YYYY for US
+      // habits, but flagged as a tie-break, not a guarantee.
+      if (a >= 1 && a <= 12 && b >= 1 && b <= 31) {
+        return new Date(Date.UTC(y, a - 1, b, 12));
+      }
+    }
+    // Last resort: native parser. Normalise to UTC noon.
+    const t = Date.parse(str);
+    if (!isFinite(t)) return null;
+    const d = new Date(t);
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12));
+  };
+
+  dates.diffDays = function (a, b) {
+    if (!a || !b) return NaN;
+    return Math.round((a.getTime() - b.getTime()) / MS_PER_DAY);
+  };
+
+  dates.addDays = function (d, n) {
+    return new Date(d.getTime() + n * MS_PER_DAY);
+  };
+
+  dates.fmtISO = function (d) {
+    if (!d) return '';
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  };
+
+  dates.fmtShort = function (d) {
+    if (!d) return '';
+    return d.getUTCDate() + ' ' + MONTH_ABBR[d.getUTCMonth()];
+  };
+
+  // Take an array of records, derive (Date, number) via accessors,
+  // sort ascending by date, and return one entry per calendar day
+  // between min and max. Missing days are emitted with value 0 and
+  // `filled: true`. Duplicate dates collapse via summation.
+  dates.fillDaily = function (records, getDate, getValue) {
+    if (!records || !records.length) {
+      return { rows: [], filledCount: 0, firstDate: null, lastDate: null };
+    }
+    const buckets = {};
+    let minT = Infinity, maxT = -Infinity;
+    for (let i = 0; i < records.length; i++) {
+      const d = getDate(records[i]);
+      const v = getValue(records[i]);
+      if (!d || !isFinite(v)) continue;
+      const t = d.getTime();
+      if (t < minT) minT = t;
+      if (t > maxT) maxT = t;
+      buckets[t] = (buckets[t] || 0) + v;
+    }
+    if (!isFinite(minT)) {
+      return { rows: [], filledCount: 0, firstDate: null, lastDate: null };
+    }
+    const rows = [];
+    let filledCount = 0;
+    for (let t = minT; t <= maxT; t += MS_PER_DAY) {
+      const has = Object.prototype.hasOwnProperty.call(buckets, t);
+      rows.push({
+        date: new Date(t),
+        value: has ? buckets[t] : 0,
+        filled: !has
+      });
+      if (!has) filledCount++;
+    }
+    return {
+      rows: rows,
+      filledCount: filledCount,
+      firstDate: new Date(minT),
+      lastDate: new Date(maxT)
+    };
+  };
+
+  Tools.dates = dates;
 
   /* ---------------------------------------------------------
      Tools.chart — minimal hand-rolled SVG charts

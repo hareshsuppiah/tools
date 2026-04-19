@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ewma training load monitor — sport science tools</title>
+    <meta name="description" content="EWMA acute:chronic load monitor with optional rolling and uncoupled ACWR overlays.">
+    <meta property="og:title" content="ewma training load monitor — sport science tools">
+    <meta property="og:description" content="EWMA acute:chronic load monitor with optional rolling and uncoupled ACWR overlays.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
+    <style>
+      /* Tool-specific tweaks. Use only design-system tokens. */
+      .ewma-textarea {
+        min-height: 120px;
+        font-family: var(--font-mono);
+        resize: vertical;
+        white-space: pre;
+      }
+      .ewma-textarea.is-dragging {
+        border-color: var(--accent);
+      }
+      .ewma-helper-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--s-3);
+      }
+      .ewma-link-btn {
+        background: transparent;
+        border: none;
+        color: var(--accent);
+        font-family: inherit;
+        font-size: var(--t-12);
+        padding: 0;
+        cursor: pointer;
+      }
+      .ewma-link-btn:hover {
+        text-decoration: underline;
+      }
+      .ewma-overlays {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-2);
+      }
+      .ewma-overlay {
+        display: flex;
+        align-items: center;
+        gap: var(--s-2);
+        font-size: var(--t-13);
+        color: var(--text-2);
+        cursor: pointer;
+      }
+      .ewma-overlay input { accent-color: var(--accent); }
+      .ewma-band-row {
+        display: flex;
+        align-items: center;
+        gap: var(--s-2);
+      }
+      .ewma-band-row .field { max-width: 7em; }
+      .ewma-band-row span { color: var(--text-3); font-size: var(--t-12); }
+      .ewma-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s-4);
+        font-size: var(--t-12);
+        color: var(--text-3);
+        margin-top: var(--s-2);
+      }
+      .ewma-legend__sw {
+        display: inline-block;
+        width: 18px;
+        height: 0;
+        border-top: 1.5px solid var(--accent);
+        margin-right: var(--s-1);
+        vertical-align: middle;
+      }
+      .ewma-legend__sw--secondary {
+        border-top: 1.5px dashed var(--text-2);
+      }
+      .ewma-legend__sw--tertiary {
+        border-top: 1.5px dotted var(--text-3);
+      }
+      .ewma-legend__sw--band {
+        height: 8px;
+        border-top: none;
+        background: var(--warn);
+        opacity: 0.30;
+        border-radius: 2px;
+      }
+      .ewma-status-tag {
+        font-size: var(--t-12);
+        color: var(--text-3);
+      }
+      .ewma-empty {
+        padding: var(--s-5);
+        text-align: center;
+        color: var(--text-3);
+        font-size: var(--t-13);
+        border: 1px dashed var(--border);
+        border-radius: var(--r-md);
+      }
+      .ewma-table-wrap {
+        max-height: 360px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+      }
+      .ewma-table-wrap .data-table { border-collapse: separate; }
+      .ewma-table-wrap .data-table thead th {
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        z-index: 1;
+      }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
+        </button>
+    </div>
+
+    <main class="tool-shell tool-shell--wide">
+        <header class="tool-header">
+            <a href="./" class="tool-header__back">← all tools</a>
+            <h1>ewma training load monitor</h1>
+            <p class="tool-header__subtitle">acute:chronic load done with EWMA, with the rolling versions for comparison</p>
+        </header>
+
+        <!-- LOAD TYPE ----------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">load type</h2>
+            <div class="segmented" role="tablist" id="load-type">
+                <button class="segmented__btn" data-load-type="srpe" data-unit="AU" aria-pressed="true">sRPE (AU)</button>
+                <button class="segmented__btn" data-load-type="distance" data-unit="m" aria-pressed="false">total distance (m)</button>
+                <button class="segmented__btn" data-load-type="hsr" data-unit="m" aria-pressed="false">high-speed running (m)</button>
+            </div>
+        </section>
+
+        <!-- DATA INPUT ---------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">data</h2>
+            <div class="input-row">
+                <label class="input-row__label" for="data-text">paste or drop a CSV</label>
+                <textarea class="field ewma-textarea" id="data-text" spellcheck="false" placeholder="date,load
+2025-01-01,400
+2025-01-02,500
+2025-01-03,0
+2025-01-04,600
+2025-01-05,300
+..."></textarea>
+                <div class="ewma-helper-row">
+                    <span class="input-row__helper">
+                        accepted column names: date / day / session_date · load / srpe / total_distance / hsr / value
+                    </span>
+                    <button type="button" class="ewma-link-btn" id="load-sample">load 60-day sample</button>
+                </div>
+                <div class="input-row__error" id="data-error" hidden></div>
+            </div>
+        </section>
+
+        <!-- PARAMETERS ---------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">parameters</h2>
+            <div class="input-grid">
+                <div class="input-row">
+                    <label class="input-row__label" for="param-acute">acute window (days)</label>
+                    <input class="field" type="number" id="param-acute" min="1" max="60" step="1" value="7" inputmode="numeric">
+                    <span class="input-row__helper" id="lambda-acute">λ_acute = 0.250</span>
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="param-chronic">chronic window (days)</label>
+                    <input class="field" type="number" id="param-chronic" min="2" max="365" step="1" value="28" inputmode="numeric">
+                    <span class="input-row__helper" id="lambda-chronic">λ_chronic = 0.069</span>
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="band-low">caution band (low)</label>
+                    <input class="field" type="number" id="band-low" min="0" step="0.05" value="1.5" inputmode="decimal">
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="band-high">caution band (high)</label>
+                    <input class="field" type="number" id="band-high" min="0" step="0.05" value="2.0" inputmode="decimal">
+                </div>
+                <div class="input-row input-grid__full">
+                    <span class="input-row__label">overlay</span>
+                    <div class="ewma-overlays">
+                        <label class="ewma-overlay">
+                            <input type="checkbox" id="show-classic">
+                            show classic rolling ACWR (7/28, coupled)
+                        </label>
+                        <label class="ewma-overlay">
+                            <input type="checkbox" id="show-uncoupled">
+                            show uncoupled rolling ACWR (acute / mean of days 8–28)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CALLOUTS ------------------------------------------------ -->
+        <section class="tool-section" id="callouts" hidden></section>
+
+        <!-- CHART 1 — EWMA ACUTE vs CHRONIC ------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">ewma acute &amp; chronic load</h2>
+            <div class="chart" id="chart-loads"></div>
+            <div class="ewma-legend">
+                <span><span class="ewma-legend__sw"></span>EWMA acute</span>
+                <span><span class="ewma-legend__sw ewma-legend__sw--secondary"></span>EWMA chronic</span>
+            </div>
+        </section>
+
+        <!-- CHART 2 — RATIO ----------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">ewma acute:chronic ratio</h2>
+            <div class="chart" id="chart-ratio"></div>
+            <div class="ewma-legend" id="ratio-legend">
+                <span><span class="ewma-legend__sw"></span>EWMA ratio</span>
+                <span><span class="ewma-legend__sw ewma-legend__sw--band"></span>caution band</span>
+            </div>
+        </section>
+
+        <!-- TABLE --------------------------------------------------- -->
+        <section class="tool-section">
+            <h2 class="tool-section__title">daily values</h2>
+            <div id="table-container">
+                <div class="ewma-empty" id="empty-state">paste or drop a CSV to begin, or load the 60-day sample.</div>
+            </div>
+            <div style="margin-top: var(--s-3);">
+                <button class="btn-download" type="button" id="download-csv" disabled>Download CSV</button>
+            </div>
+        </section>
+
+        <!-- METHOD -------------------------------------------------- -->
+        <details class="method">
+            <summary class="method__summary">method, defaults, references</summary>
+            <div class="method__body">
+                <p><strong>EWMA acute and chronic load.</strong> Each day's load is fed into two exponentially-weighted moving averages with different decay constants — a fast one for acute load (default 7-day window) and a slow one for chronic load (default 28-day window). The seed value is the first day's load, so both series need ~28 days before the chronic line stabilises.</p>
+<pre>EWMA_today = λ · load_today + (1 − λ) · EWMA_yesterday
+λ          = 2 / (N + 1)              // N = window in days
+ratio      = EWMA_acute / EWMA_chronic</pre>
+                <p><strong>Why EWMA, not 7/28 rolling.</strong> A rolling 28-day mean includes the 7-day acute window inside it, which mathematically couples acute and chronic load — a spike in load lifts both numerator and denominator (Windt &amp; Gabbett 2019). Exponentially-weighted averages avoid the hard cut-off and give recent days more weight, which is closer to how the body responds. The "uncoupled" rolling variant fixes the coupling but keeps the hard window:</p>
+<pre>uncoupled_ACWR = mean(load, days t−6…t) / mean(load, days t−27…t−7)</pre>
+                <p><strong>Why not Hopkins/Gabbett thresholds.</strong> The 0.8–1.3 "sweet spot" and the 1.5+ "danger zone" are not supported once outliers are removed and load is treated as continuous (Impellizzeri et al. 2020). The default 1.5–2.0 caution band here is a deliberately loose flag for very large week-to-week spikes, not a clinical threshold. Edit the band to match your context, or ignore it entirely and read the trend.</p>
+                <p><strong>Edge cases.</strong> Missing days are filled with zero load and counted in a callout above the chart. The first 28 days are flagged "warming up" — values are computed but the ratio is not shown until the chronic EWMA has had time to stabilise. If the chronic value reaches zero (e.g., a long off-season block of zeros), the ratio is left blank rather than dividing by zero.</p>
+                <ul>
+                    <li>Windt J, Gabbett TJ. Is it all for naught? What does mathematical coupling do to the acute:chronic workload ratio? <em>BJSM</em>, 2019.</li>
+                    <li>Impellizzeri FM, Tenan MS, Kempton T, Novak A, Coutts AJ. Acute:chronic workload ratio: conceptual issues and fundamental pitfalls. <em>JOSPT</em>, 2020.</li>
+                    <li>Williams S, West S, Cross MJ, Stokes KA. Better way to determine the acute:chronic workload ratio? <em>BJSM</em>, 2017.</li>
+                    <li>Hopkins WG. A scale of magnitudes for effect statistics. <em>Sportscience</em>, 2002. (cited in the threshold critique above)</li>
+                </ul>
+            </div>
+        </details>
+
+        <footer class="tool-footer">
+            <a href="./">all tools</a> · <a href="colophon.html">colophon</a>
+        </footer>
+    </main>
+
+    <script>
+      (function () {
+        'use strict';
+
+        // ---------------------------------------------------------
+        // State
+        // ---------------------------------------------------------
+        let series = null;       // { rows, filledCount, ... }
+        let computed = null;     // computed table for current params
+
+        const els = {
+          textarea:   document.getElementById('data-text'),
+          error:      document.getElementById('data-error'),
+          loadSample: document.getElementById('load-sample'),
+          loadTypeWrap: document.getElementById('load-type'),
+          paramAcute: document.getElementById('param-acute'),
+          paramChronic: document.getElementById('param-chronic'),
+          lambdaA:    document.getElementById('lambda-acute'),
+          lambdaC:    document.getElementById('lambda-chronic'),
+          bandLow:    document.getElementById('band-low'),
+          bandHigh:   document.getElementById('band-high'),
+          showClassic:    document.getElementById('show-classic'),
+          showUncoupled:  document.getElementById('show-uncoupled'),
+          callouts:   document.getElementById('callouts'),
+          chartLoads: document.getElementById('chart-loads'),
+          chartRatio: document.getElementById('chart-ratio'),
+          ratioLegend: document.getElementById('ratio-legend'),
+          tableContainer: document.getElementById('table-container'),
+          download:   document.getElementById('download-csv'),
+        };
+
+        // ---------------------------------------------------------
+        // Load type
+        // ---------------------------------------------------------
+        function activeLoadType() {
+          const btn = els.loadTypeWrap.querySelector('[aria-pressed="true"]');
+          return btn ? { key: btn.dataset.loadType, unit: btn.dataset.unit, label: btn.textContent.trim() } : { key: 'srpe', unit: 'AU', label: 'sRPE (AU)' };
+        }
+
+        els.loadTypeWrap.querySelectorAll('.segmented__btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            els.loadTypeWrap.querySelectorAll('.segmented__btn').forEach(function (b) {
+              b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+            });
+            render();
+          });
+        });
+
+        // ---------------------------------------------------------
+        // Sample data — 60 days, deterministic. First five values
+        // are [400, 500, 0, 600, 300] so the hand-calc check works.
+        // ---------------------------------------------------------
+        function buildSampleCSV() {
+          const fixed = [400, 500, 0, 600, 300];
+          const dayMod = [0, 60, -40, 120, 20, 80, 0]; // mon..sun
+          const lines = ['date,load'];
+          const start = Tools.dates.parse('2025-01-06'); // a Monday
+          for (let i = 0; i < 60; i++) {
+            let load;
+            if (i < fixed.length) {
+              load = fixed[i];
+            } else {
+              const dow = i % 7;
+              const week = Math.floor(i / 7);
+              if (dow === 6) {
+                load = 0;
+              } else {
+                const base = 380;
+                const weekMod = (week === 4 ? 180 : week === 5 ? -120 : 0);
+                load = Math.max(0, base + dayMod[dow] + weekMod);
+              }
+            }
+            const d = Tools.dates.addDays(start, i);
+            lines.push(Tools.dates.fmtISO(d) + ',' + load);
+          }
+          return lines.join('\n');
+        }
+
+        els.loadSample.addEventListener('click', function () {
+          els.textarea.value = buildSampleCSV();
+          parseAndCompute();
+        });
+
+        // ---------------------------------------------------------
+        // CSV parsing
+        // ---------------------------------------------------------
+        const DATE_CANDIDATES = ['date', 'day', 'session_date', 'training_date'];
+        const LOAD_CANDIDATES = ['load', 'srpe', 'rpe_load', 'training_load',
+                                 'total_distance', 'distance', 'distance_m',
+                                 'hsr', 'high_speed_running', 'hsr_m', 'value'];
+
+        function showError(msg) {
+          if (!msg) {
+            els.error.hidden = true;
+            els.error.textContent = '';
+            els.textarea.classList.remove('field--error');
+          } else {
+            els.error.hidden = false;
+            els.error.textContent = msg;
+            els.textarea.classList.add('field--error');
+          }
+        }
+
+        function parseAndCompute() {
+          const text = els.textarea.value.trim();
+          if (!text) {
+            series = null;
+            showError(null);
+            render();
+            return;
+          }
+          let parsed;
+          try {
+            parsed = Tools.csv.parse(text);
+          } catch (e) {
+            series = null;
+            showError('could not parse CSV: ' + e.message);
+            render();
+            return;
+          }
+          if (!parsed.columns.length || !parsed.rows.length) {
+            series = null;
+            showError('no rows found.');
+            render();
+            return;
+          }
+
+          const dateCol = Tools.csv.findColumn(parsed.columns, DATE_CANDIDATES);
+          const loadCol = Tools.csv.findColumn(parsed.columns, LOAD_CANDIDATES);
+          if (!dateCol || !loadCol) {
+            series = null;
+            const missing = [];
+            if (!dateCol) missing.push('date');
+            if (!loadCol) missing.push('load');
+            showError('missing column(s): ' + missing.join(', ') + '. headers found: ' + parsed.columns.join(', '));
+            render();
+            return;
+          }
+
+          const records = [];
+          let badRows = 0;
+          for (let i = 0; i < parsed.rows.length; i++) {
+            const r = parsed.rows[i];
+            const d = Tools.dates.parse(r[dateCol]);
+            const v = parseFloat(r[loadCol]);
+            if (!d || !isFinite(v)) { badRows++; continue; }
+            records.push({ date: d, value: v });
+          }
+          if (!records.length) {
+            series = null;
+            showError('no parseable rows. check the date and load columns.');
+            render();
+            return;
+          }
+          showError(null);
+          series = Tools.dates.fillDaily(records, function (r) { return r.date; }, function (r) { return r.value; });
+          series.badRows = badRows;
+          render();
+        }
+
+        Tools.csv.dropzone(els.textarea, function (parsed, err) {
+          if (err) { showError('drop failed: ' + err.message); return; }
+          if (parsed) {
+            // Re-emit as CSV so the textarea reflects the dropped file.
+            els.textarea.value = Tools.csv.toText(parsed);
+            parseAndCompute();
+          }
+        });
+
+        els.textarea.addEventListener('input', parseAndCompute);
+
+        // ---------------------------------------------------------
+        // Parameters
+        // ---------------------------------------------------------
+        function lambdaFromN(n) {
+          if (!isFinite(n) || n < 1) return NaN;
+          return 2 / (n + 1);
+        }
+
+        function updateLambdaHelpers() {
+          const na = parseInt(els.paramAcute.value, 10);
+          const nc = parseInt(els.paramChronic.value, 10);
+          els.lambdaA.textContent = 'λ_acute = ' + (isFinite(na) ? Tools.fmt.fixed(lambdaFromN(na), 3) : '—');
+          els.lambdaC.textContent = 'λ_chronic = ' + (isFinite(nc) ? Tools.fmt.fixed(lambdaFromN(nc), 3) : '—');
+        }
+
+        [els.paramAcute, els.paramChronic, els.bandLow, els.bandHigh,
+         els.showClassic, els.showUncoupled].forEach(function (el) {
+          el.addEventListener('input', function () {
+            updateLambdaHelpers();
+            render();
+          });
+          el.addEventListener('change', function () {
+            updateLambdaHelpers();
+            render();
+          });
+        });
+
+        // ---------------------------------------------------------
+        // Computation
+        // ---------------------------------------------------------
+        function meanRange(arr, start, end) {
+          // inclusive start, inclusive end
+          if (start < 0 || end >= arr.length || start > end) return NaN;
+          let s = 0;
+          for (let i = start; i <= end; i++) s += arr[i];
+          return s / (end - start + 1);
+        }
+
+        function compute(params) {
+          if (!series || !series.rows.length) return null;
+
+          const loads = series.rows.map(function (r) { return r.value; });
+          const dates = series.rows.map(function (r) { return r.date; });
+          const filled = series.rows.map(function (r) { return r.filled; });
+          const N = loads.length;
+
+          const na = Math.max(1, params.na);
+          const nc = Math.max(2, params.nc);
+          const la = lambdaFromN(na);
+          const lc = lambdaFromN(nc);
+
+          const acute  = Tools.stats.ewma(loads, la, loads[0]);
+          const chron  = Tools.stats.ewma(loads, lc, loads[0]);
+
+          const ratio = new Array(N);
+          let zeroChronicHit = false;
+          for (let i = 0; i < N; i++) {
+            if (i < nc) { ratio[i] = NaN; continue; }
+            if (chron[i] === 0) { ratio[i] = NaN; zeroChronicHit = true; continue; }
+            ratio[i] = acute[i] / chron[i];
+          }
+
+          // Classic rolling (coupled): acute = 7-day rolling, chronic = 28-day rolling
+          let classicAcute = null, classicChron = null, classicRatio = null;
+          if (params.classic) {
+            classicAcute = Tools.stats.rollingMean(loads, 7);
+            classicChron = Tools.stats.rollingMean(loads, 28);
+            classicRatio = new Array(N);
+            for (let i = 0; i < N; i++) {
+              classicRatio[i] = (i >= 27 && classicChron[i] > 0)
+                ? classicAcute[i] / classicChron[i] : NaN;
+            }
+          }
+
+          // Uncoupled rolling: acute = 7-day rolling, chronic = mean(loads[i-27..i-7])
+          let uncoupledChron = null, uncoupledRatio = null;
+          if (params.uncoupled) {
+            const acute7 = classicAcute || Tools.stats.rollingMean(loads, 7);
+            uncoupledChron = new Array(N);
+            uncoupledRatio = new Array(N);
+            for (let i = 0; i < N; i++) {
+              if (i < 27) { uncoupledChron[i] = NaN; uncoupledRatio[i] = NaN; continue; }
+              const u = meanRange(loads, i - 27, i - 7);
+              uncoupledChron[i] = u;
+              uncoupledRatio[i] = (u > 0 && isFinite(acute7[i])) ? acute7[i] / u : NaN;
+            }
+          }
+
+          return {
+            dates: dates, loads: loads, filled: filled,
+            acute: acute, chron: chron, ratio: ratio,
+            classicAcute: classicAcute, classicChron: classicChron, classicRatio: classicRatio,
+            uncoupledChron: uncoupledChron, uncoupledRatio: uncoupledRatio,
+            na: na, nc: nc, la: la, lc: lc,
+            zeroChronicHit: zeroChronicHit
+          };
+        }
+
+        // ---------------------------------------------------------
+        // Render
+        // ---------------------------------------------------------
+        function getParams() {
+          return {
+            na: parseInt(els.paramAcute.value, 10),
+            nc: parseInt(els.paramChronic.value, 10),
+            bandLow:  parseFloat(els.bandLow.value),
+            bandHigh: parseFloat(els.bandHigh.value),
+            classic:   els.showClassic.checked,
+            uncoupled: els.showUncoupled.checked,
+          };
+        }
+
+        function renderCallouts(params) {
+          const lines = [];
+          if (!series) {
+            els.callouts.hidden = true;
+            els.callouts.innerHTML = '';
+            return;
+          }
+          const N = series.rows.length;
+          if (N < params.nc) {
+            lines.push({
+              variant: 'warn',
+              text: 'warming up — chronic load needs ' + params.nc + ' days to stabilise. ' + N + ' day' + (N === 1 ? '' : 's') + ' so far.'
+            });
+          }
+          if (series.filledCount > 0) {
+            lines.push({
+              variant: 'warn',
+              text: 'filled ' + series.filledCount + ' missing day' + (series.filledCount === 1 ? '' : 's') + ' as zero load.'
+            });
+          }
+          if (computed && computed.zeroChronicHit) {
+            lines.push({
+              variant: 'warn',
+              text: 'one or more days have zero chronic load — ratio not defined for those days.'
+            });
+          }
+          if (series.badRows) {
+            lines.push({
+              variant: 'warn',
+              text: 'skipped ' + series.badRows + ' row(s) with unparseable date or load.'
+            });
+          }
+          if (!lines.length) {
+            els.callouts.hidden = true;
+            els.callouts.innerHTML = '';
+            return;
+          }
+          els.callouts.hidden = false;
+          els.callouts.innerHTML = lines.map(function (c) {
+            return '<div class="callout callout--' + c.variant + '">' + c.text + '</div>';
+          }).join('');
+        }
+
+        function renderCharts(params) {
+          if (!computed) {
+            // empty placeholders
+            [els.chartLoads, els.chartRatio].forEach(function (el) {
+              while (el.firstChild) el.removeChild(el.firstChild);
+            });
+            return;
+          }
+          const lt = activeLoadType();
+          const xs = computed.dates.map(function (_, i) { return i; });
+          const xTickFmt = function (t) {
+            const i = Math.round(t);
+            if (i < 0 || i >= computed.dates.length) return '';
+            return Tools.dates.fmtShort(computed.dates[i]);
+          };
+
+          // chart 1: loads
+          Tools.chart.line(els.chartLoads, [
+            { x: xs, y: computed.acute },
+            { x: xs, y: computed.chron, dashed: true }
+          ], {
+            yLabel: 'load (' + lt.unit + ')',
+            xTickFmt: xTickFmt
+          });
+
+          // chart 2: ratio
+          const ratioSeries = [{ x: xs, y: computed.ratio }];
+          const legendBits = [
+            '<span><span class="ewma-legend__sw"></span>EWMA ratio</span>',
+            '<span><span class="ewma-legend__sw ewma-legend__sw--band"></span>caution band</span>'
+          ];
+          if (params.classic && computed.classicRatio) {
+            ratioSeries.push({ x: xs, y: computed.classicRatio, dashed: true });
+            legendBits.push('<span><span class="ewma-legend__sw ewma-legend__sw--secondary"></span>rolling ACWR</span>');
+          }
+          if (params.uncoupled && computed.uncoupledRatio) {
+            ratioSeries.push({ x: xs, y: computed.uncoupledRatio, _tertiary: true });
+            legendBits.push('<span><span class="ewma-legend__sw ewma-legend__sw--tertiary"></span>uncoupled ACWR</span>');
+          }
+          const bands = (isFinite(params.bandLow) && isFinite(params.bandHigh) && params.bandHigh > params.bandLow)
+            ? [{ y0: params.bandLow, y1: params.bandHigh, variant: 'warn' }]
+            : [];
+          Tools.chart.line(els.chartRatio, ratioSeries, {
+            yLabel: 'acute / chronic',
+            bands: bands,
+            xTickFmt: xTickFmt
+          });
+          // Re-class the third series path as tertiary (chart.line
+          // styles series[idx>0] as secondary by default).
+          const paths = els.chartRatio.querySelectorAll('path.chart-series');
+          ratioSeries.forEach(function (s, idx) {
+            if (s._tertiary && paths[idx]) {
+              paths[idx].setAttribute('class', 'chart-series chart-series--tertiary');
+            }
+          });
+
+          els.ratioLegend.innerHTML = legendBits.join('');
+        }
+
+        function renderTable(params) {
+          if (!computed) {
+            els.tableContainer.innerHTML = '<div class="ewma-empty" id="empty-state">paste or drop a CSV to begin, or load the 60-day sample.</div>';
+            els.download.disabled = true;
+            return;
+          }
+          const lt = activeLoadType();
+          const headers = ['date', 'load (' + lt.unit + ')',
+                           'ewma acute', 'ewma chronic', 'ewma ratio'];
+          if (params.classic)   headers.push('rolling ratio');
+          if (params.uncoupled) headers.push('uncoupled ratio');
+          headers.push('status');
+
+          const last = computed.dates.length - 1;
+          let html = '<div class="ewma-table-wrap"><table class="data-table"><thead><tr>';
+          headers.forEach(function (h, i) {
+            html += '<th' + (i === 0 || i === headers.length - 1 ? '' : ' class="num"') + '>' + h + '</th>';
+          });
+          html += '</tr></thead><tbody>';
+
+          for (let i = 0; i < computed.dates.length; i++) {
+            const status = [];
+            if (i < params.nc) status.push('warming up');
+            if (computed.filled[i]) status.push('filled');
+            const cls = (i === last) ? ' class="is-active"' : '';
+            html += '<tr' + cls + '>';
+            html += '<td>' + Tools.dates.fmtISO(computed.dates[i]) + '</td>';
+            html += '<td class="num">' + Tools.fmt.fixed(computed.loads[i], 0) + '</td>';
+            html += '<td class="num">' + Tools.fmt.fixed(computed.acute[i], 1) + '</td>';
+            html += '<td class="num">' + Tools.fmt.fixed(computed.chron[i], 1) + '</td>';
+            html += '<td class="num">' + (isFinite(computed.ratio[i]) ? Tools.fmt.fixed(computed.ratio[i], 2) : '') + '</td>';
+            if (params.classic) {
+              const v = computed.classicRatio ? computed.classicRatio[i] : NaN;
+              html += '<td class="num">' + (isFinite(v) ? Tools.fmt.fixed(v, 2) : '') + '</td>';
+            }
+            if (params.uncoupled) {
+              const v = computed.uncoupledRatio ? computed.uncoupledRatio[i] : NaN;
+              html += '<td class="num">' + (isFinite(v) ? Tools.fmt.fixed(v, 2) : '') + '</td>';
+            }
+            html += '<td><span class="ewma-status-tag">' + status.join(' · ') + '</span></td>';
+            html += '</tr>';
+          }
+          html += '</tbody></table></div>';
+          els.tableContainer.innerHTML = html;
+          els.download.disabled = false;
+        }
+
+        function render() {
+          const params = getParams();
+          computed = compute(params);
+          renderCallouts(params);
+          renderCharts(params);
+          renderTable(params);
+        }
+
+        // ---------------------------------------------------------
+        // CSV download
+        // ---------------------------------------------------------
+        els.download.addEventListener('click', function () {
+          if (!computed) return;
+          const params = getParams();
+          const lt = activeLoadType();
+          const cols = ['date', 'load', 'load_type',
+                        'ewma_acute', 'ewma_chronic', 'ewma_ratio'];
+          if (params.classic)   cols.push('classic_acute7', 'classic_chronic28', 'classic_ratio');
+          if (params.uncoupled) cols.push('uncoupled_chronic21', 'uncoupled_ratio');
+          cols.push('status');
+
+          const rows = [];
+          for (let i = 0; i < computed.dates.length; i++) {
+            const status = [];
+            if (i < params.nc) status.push('warming up');
+            if (computed.filled[i]) status.push('filled');
+            const row = {
+              date:         Tools.dates.fmtISO(computed.dates[i]),
+              load:         Number(Tools.fmt.fixed(computed.loads[i], 4)),
+              load_type:    lt.key,
+              ewma_acute:   Number(Tools.fmt.fixed(computed.acute[i], 4)),
+              ewma_chronic: Number(Tools.fmt.fixed(computed.chron[i], 4)),
+              ewma_ratio:   isFinite(computed.ratio[i]) ? Number(Tools.fmt.fixed(computed.ratio[i], 4)) : '',
+            };
+            if (params.classic) {
+              row.classic_acute7    = isFinite(computed.classicAcute[i]) ? Number(Tools.fmt.fixed(computed.classicAcute[i], 4)) : '';
+              row.classic_chronic28 = isFinite(computed.classicChron[i]) ? Number(Tools.fmt.fixed(computed.classicChron[i], 4)) : '';
+              row.classic_ratio     = isFinite(computed.classicRatio[i]) ? Number(Tools.fmt.fixed(computed.classicRatio[i], 4)) : '';
+            }
+            if (params.uncoupled) {
+              row.uncoupled_chronic21 = isFinite(computed.uncoupledChron[i]) ? Number(Tools.fmt.fixed(computed.uncoupledChron[i], 4)) : '';
+              row.uncoupled_ratio     = isFinite(computed.uncoupledRatio[i]) ? Number(Tools.fmt.fixed(computed.uncoupledRatio[i], 4)) : '';
+            }
+            row.status = status.join(' · ');
+            rows.push(row);
+          }
+          Tools.csv.download('ewma-load.csv', { columns: cols, rows: rows });
+        });
+
+        // ---------------------------------------------------------
+        // Initial state
+        // ---------------------------------------------------------
+        updateLambdaHelpers();
+        render();
+      })();
+    </script>
+</body>
+</html>
