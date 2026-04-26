@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>frequentist vs bayesian — sport science tools</title>
+    <meta name="description" content="Interactive demo: estimate a basketball player's free-throw rate two ways. Compare a single-best-guess approach to belief-updating with a prior.">
+    <meta property="og:title" content="frequentist vs bayesian — sport science tools">
+    <meta property="og:description" content="Interactive demo of the frequentist and bayesian approaches using basketball free throws.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏀</text></svg>">
+    <link rel="stylesheet" href="assets/tools.css">
+    <script src="assets/tools.js"></script>
+    <style>
+      /* Tool-local styling. Only design-system tokens. */
+      .primer { margin-bottom: var(--s-5); }
+      .primer ul { padding-left: var(--s-4); margin: var(--s-1) 0; }
+      .primer li { margin-bottom: var(--s-1); }
+
+      .panel-title {
+        font-size: var(--t-12);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-3);
+        margin-bottom: var(--s-2);
+      }
+
+      .panel {
+        margin-bottom: var(--s-5);
+      }
+
+      .slider-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: var(--s-3);
+        align-items: center;
+      }
+      .slider-row input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      .slider-row .field {
+        width: 5.5rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s-4);
+        font-size: var(--t-12);
+        color: var(--text-2);
+        margin-bottom: var(--s-2);
+      }
+      .legend__swatch {
+        display: inline-block;
+        width: 24px;
+        height: 0;
+        border-top: 1.5px solid var(--text-2);
+        margin-right: var(--s-2);
+        vertical-align: middle;
+      }
+      .legend__swatch--prior     { border-top-style: dashed; border-top-color: var(--text-2); }
+      .legend__swatch--likelihood{ border-top-style: dotted; border-top-color: var(--text-3); border-top-width: 2px; }
+      .legend__swatch--posterior { border-top-style: solid;  border-top-color: var(--accent); }
+      .legend__swatch--freq      { border-top: none; width: 1.5px; height: 14px; background: var(--text-2); margin-right: var(--s-2); display: inline-block; vertical-align: middle; }
+
+      .prior-custom[hidden] { display: none; }
+      .prior-custom { margin-top: var(--s-3); }
+
+      .results-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--s-3);
+      }
+      @media (max-width: 720px) {
+        .results-pair { grid-template-columns: 1fr; }
+      }
+
+      .result-card h3 {
+        font-size: var(--t-13);
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: var(--s-3);
+      }
+      .result-card .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--s-3);
+        padding: var(--s-1) 0;
+      }
+      .result-card .row + .row { border-top: 1px solid var(--border); }
+      .result-card .row__label {
+        font-size: var(--t-12);
+        color: var(--text-3);
+        flex: 1;
+      }
+      .result-card .row__value {
+        font-size: var(--t-14);
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .result-card .row__value--big {
+        font-size: var(--t-20);
+        font-weight: 500;
+      }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button class="theme-toggle__btn" data-theme-toggle aria-label="toggle theme">
+            <span class="theme-toggle__icon" data-theme-icon>☾</span>
+        </button>
+    </div>
+
+    <main class="tool-shell tool-shell--wide">
+        <header class="tool-header">
+            <a href="./" class="tool-header__back">← all tools</a>
+            <h1>frequentist vs bayesian</h1>
+            <p class="tool-header__subtitle">two ways to estimate a basketball player's free-throw rate — change the inputs and watch both update</p>
+        </header>
+
+        <!-- 60-SECOND PRIMER ---------------------------------------- -->
+        <section class="tool-section primer">
+            <div class="callout">
+                <strong>two ways to learn from data.</strong>
+                <ul>
+                    <li><strong>frequentist (the textbook approach):</strong> give one best guess and a range. the range is <em>not</em> the probability the truth is inside it — it's a procedure that, over many repeats, covers the truth 95% of the time.</li>
+                    <li><strong>bayesian (the belief-updating approach):</strong> start with what you believed before, fold in what you saw, end with an updated belief curve. the 95% range really does mean "95% chance the truth is here, given what we believed and what we saw."</li>
+                    <li>change the inputs below and watch both methods react.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTIONS -------------------------------------------------- -->
+        <!-- SCENARIO PRESETS ---------------------------------------- -->
+        <section class="tool-section panel" id="scenario-panel">
+            <h2 class="panel-title">try a scenario</h2>
+            <div class="segmented" role="tablist" id="scenario">
+                <button class="segmented__btn" data-scenario="rookie"   aria-pressed="false">rookie · 4 of 5</button>
+                <button class="segmented__btn" data-scenario="game"     aria-pressed="false">first game · 8 of 10</button>
+                <button class="segmented__btn" data-scenario="halfseason" aria-pressed="true">half season · 70 of 100</button>
+                <button class="segmented__btn" data-scenario="fullseason" aria-pressed="false">full season · 320 of 400</button>
+                <button class="segmented__btn" data-scenario="custom"   aria-pressed="false">custom</button>
+            </div>
+        </section>
+
+        <!-- OBSERVED DATA INPUTS ------------------------------------ -->
+        <section class="tool-section panel" id="observed-panel">
+            <h2 class="panel-title">what you observed</h2>
+            <div class="input-row">
+                <label class="input-row__label" for="n-num">shots attempted</label>
+                <div class="slider-row">
+                    <input type="range" id="n-range" min="1" max="500" step="1" value="100">
+                    <input type="number" id="n-num" class="field" min="1" max="500" step="1" value="100" inputmode="numeric">
+                </div>
+            </div>
+            <div class="input-row">
+                <label class="input-row__label" for="k-num">shots made</label>
+                <div class="slider-row">
+                    <input type="range" id="k-range" min="0" max="500" step="1" value="70">
+                    <input type="number" id="k-num" class="field" min="0" max="500" step="1" value="70" inputmode="numeric">
+                </div>
+                <p class="input-row__helper" id="k-helper">made out of attempted — 70.0% observed</p>
+            </div>
+        </section>
+
+        <!-- PRIOR INPUTS -------------------------------------------- -->
+        <section class="tool-section panel" id="prior-panel">
+            <h2 class="panel-title">what you believed before seeing the data</h2>
+            <div class="segmented" role="tablist" id="prior-preset">
+                <button class="segmented__btn" data-prior="none"   aria-pressed="false">no opinion</button>
+                <button class="segmented__btn" data-prior="weak"   aria-pressed="true">vague guess: ~75%</button>
+                <button class="segmented__btn" data-prior="strong" aria-pressed="false">strong belief: ~75%</button>
+                <button class="segmented__btn" data-prior="custom" aria-pressed="false">custom</button>
+            </div>
+
+            <div class="prior-custom" id="prior-custom" hidden>
+                <div class="input-row">
+                    <label class="input-row__label" for="mu-num">your guess at the true rate</label>
+                    <div class="slider-row">
+                        <input type="range" id="mu-range" min="1" max="99" step="1" value="75">
+                        <input type="number" id="mu-num" class="field" min="1" max="99" step="1" value="75" inputmode="numeric">
+                    </div>
+                    <p class="input-row__helper">percent (1–99)</p>
+                </div>
+                <div class="input-row">
+                    <label class="input-row__label" for="kappa-num">how confident, in equivalent shots seen</label>
+                    <div class="slider-row">
+                        <input type="range" id="kappa-range" min="2" max="200" step="1" value="10">
+                        <input type="number" id="kappa-num" class="field" min="2" max="200" step="1" value="10" inputmode="numeric">
+                    </div>
+                    <p class="input-row__helper">2 = barely any opinion · 200 = very confident</p>
+                </div>
+            </div>
+        </section>
+        <!-- RESULTS -------------------------------------------------- -->
+        <section class="tool-section panel" id="results-panel">
+            <h2 class="panel-title">results</h2>
+            <div class="results-pair">
+                <div class="result-card">
+                    <h3>the textbook approach (frequentist)</h3>
+                    <div class="row">
+                        <span class="row__label">best single guess</span>
+                        <span class="row__value row__value--big" id="freq-mean">—</span>
+                    </div>
+                    <div class="row">
+                        <span class="row__label">textbook 95% range<br><span class="text-3">(normal approximation)</span></span>
+                        <span class="row__value" id="freq-wald">—</span>
+                    </div>
+                    <div class="row">
+                        <span class="row__label">more accurate 95% range<br><span class="text-3">(works at small n / extremes)</span></span>
+                        <span class="row__value" id="freq-wilson">—</span>
+                    </div>
+                    <p class="callout" style="margin-top:var(--s-3);margin-bottom:0;">
+                        the range is <em>not</em> the probability the true rate is inside it. it's a procedure that, over many repeats, covers the truth 95% of the time.
+                    </p>
+                </div>
+
+                <div class="result-card">
+                    <h3>the belief-updating approach (bayesian)</h3>
+                    <div class="row">
+                        <span class="row__label">updated best guess<br><span class="text-3">(posterior mean)</span></span>
+                        <span class="row__value row__value--big" id="bay-mean">—</span>
+                    </div>
+                    <div class="row">
+                        <span class="row__label">most-likely single value<br><span class="text-3">(posterior mode)</span></span>
+                        <span class="row__value" id="bay-mode">—</span>
+                    </div>
+                    <div class="row">
+                        <span class="row__label">95% most-likely range<br><span class="text-3">(credible interval)</span></span>
+                        <span class="row__value" id="bay-ci">—</span>
+                    </div>
+                    <div class="row">
+                        <span class="row__label">chance the true rate is above 75%</span>
+                        <span class="row__value" id="bay-tail">—</span>
+                    </div>
+                    <p class="callout" style="margin-top:var(--s-3);margin-bottom:0;">
+                        there is a 95% chance the true rate sits in the shaded band, given what you believed and what you saw.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHART ---------------------------------------------------- -->
+        <section class="tool-section panel" id="chart-panel">
+            <h2 class="panel-title">picture</h2>
+            <div class="legend" aria-hidden="true">
+                <span><span class="legend__swatch legend__swatch--prior"></span>what we believed before</span>
+                <span><span class="legend__swatch legend__swatch--likelihood"></span>what the data alone says</span>
+                <span><span class="legend__swatch legend__swatch--posterior"></span>what we believe now</span>
+                <span><span class="legend__swatch legend__swatch--freq"></span>frequentist best guess + ranges</span>
+            </div>
+            <div class="chart" id="chart"></div>
+            <p class="input-row__helper" style="margin-top:var(--s-2);">
+                horizontal axis: true free-throw rate (0–100%). the shaded band is the 95% credible interval. the whiskers under the axis are the two frequentist 95% ranges.
+            </p>
+        </section>
+        <!-- WHAT CHANGED -------------------------------------------- -->
+        <section class="tool-section panel" id="changed-panel">
+            <h2 class="panel-title">what changed</h2>
+            <p class="callout" id="note-pull">—</p>
+            <p class="callout" id="note-width">—</p>
+            <p class="callout" id="note-agree">—</p>
+        </section>
+
+        <!-- METHOD --------------------------------------------------- -->
+        <details class="method" id="method-panel">
+            <summary class="method__summary">method, formulas, references</summary>
+            <div class="method__body">
+                <p>The free-throw count is treated as a binomial outcome: <code>k</code> makes out of <code>n</code> attempts, with unknown success rate <code>p</code>. Both methods estimate <code>p</code>, but with different philosophies.</p>
+
+                <p><strong>Frequentist.</strong> Best single guess is the sample proportion. Two 95% confidence intervals are shown:</p>
+                <pre>p̂ = k / n
+
+Wald  (textbook normal approx.):
+  p̂ ± 1.96 · √( p̂ (1 − p̂) / n )
+
+Wilson (small-n / extreme-rate safe):
+  ( p̂ + z²/2n  ±  z · √( p̂(1−p̂)/n + z²/4n² ) ) / ( 1 + z²/n )</pre>
+                <p>Wald is the formula in most introductory textbooks. It misbehaves at small <code>n</code> or when <code>p̂</code> is near 0 or 1, sometimes producing endpoints outside [0, 1]. Wilson stays inside [0, 1] and has better coverage. Both are intervals on the procedure, not probability statements about <code>p</code>.</p>
+
+                <p><strong>Bayesian.</strong> A Beta prior on <code>p</code> is conjugate to the binomial likelihood, so the posterior is also a Beta distribution with simple updates:</p>
+                <pre>prior:        p ~ Beta(α₀, β₀)
+likelihood:   k ~ Binomial(n, p)
+posterior:    p | data ~ Beta(α₀ + k,  β₀ + n − k)
+
+posterior mean = (α₀ + k) / (α₀ + β₀ + n)
+posterior mode = (α − 1) / (α + β − 2),  when α, β > 1
+95% credible interval = 2.5% and 97.5% quantiles of the posterior</pre>
+                <p>The presets parameterise the prior as a mean <code>μ₀</code> and a "strength" <code>κ₀</code> (interpretable as equivalent shots already seen): <code>α₀ = μ₀·κ₀</code>, <code>β₀ = (1 − μ₀)·κ₀</code>. Uninformative is <code>Beta(1, 1)</code> (uniform on [0, 1]). The "vague" preset is <code>μ₀ = 0.75</code>, <code>κ₀ = 10</code>; the "strong" preset is <code>μ₀ = 0.75</code>, <code>κ₀ = 80</code>.</p>
+
+                <p>Posterior densities and quantiles are computed numerically on a 401-point grid in [0, 1] (no gamma function needed). The likelihood curve in the chart is rescaled to share the posterior's peak height — this is a visual aid to compare shapes; the y-axis has no meaningful units.</p>
+
+                <p><strong>References.</strong></p>
+                <ul>
+                    <li>Gelman, Carlin, Stern, Dunson, Vehtari, Rubin. <em>Bayesian Data Analysis</em> (3rd ed.), 2013 — Beta-Binomial conjugacy, credible intervals.</li>
+                    <li>Brown, Cai &amp; DasGupta (2001). "Interval Estimation for a Binomial Proportion." <em>Statistical Science</em> 16(2): 101–133 — why Wald fails and Wilson is preferred.</li>
+                    <li>Wilson, E. B. (1927). "Probable Inference, the Law of Succession, and Statistical Inference." <em>JASA</em> 22(158): 209–212.</li>
+                </ul>
+            </div>
+        </details>
+
+        <footer class="tool-footer">
+            <a href="./">all tools</a> · <a href="colophon.html">colophon</a>
+        </footer>
+    </main>
+
+    <script>
+    (function () {
+      'use strict';
+
+      /* ---------- math ------------------------------------------- */
+      var GRID_N = 401;
+      var GRID = (function () {
+        var xs = new Array(GRID_N);
+        for (var i = 0; i < GRID_N; i++) xs[i] = i / (GRID_N - 1);
+        return xs;
+      })();
+
+      function betaPdfGrid(a, b) {
+        // Unnormalised log-density on the grid, then exponentiate
+        // relative to the max to avoid overflow, then normalise.
+        var xs = GRID, n = xs.length;
+        var logp = new Array(n);
+        var lmax = -Infinity;
+        for (var i = 0; i < n; i++) {
+          var x = xs[i];
+          var v;
+          if (x <= 0) v = (a > 1) ? -Infinity : (a === 1 ? 0 : Infinity);
+          else if (x >= 1) v = (b > 1) ? -Infinity : (b === 1 ? 0 : Infinity);
+          else v = (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x);
+          logp[i] = v;
+          if (isFinite(v) && v > lmax) lmax = v;
+        }
+        var pdf = new Array(n);
+        var area = 0;
+        for (var j = 0; j < n; j++) {
+          var p = isFinite(logp[j]) ? Math.exp(logp[j] - lmax) : 0;
+          pdf[j] = p;
+        }
+        for (var k = 1; k < n; k++) {
+          area += 0.5 * (pdf[k] + pdf[k - 1]) * (xs[k] - xs[k - 1]);
+        }
+        if (area > 0) for (var m = 0; m < n; m++) pdf[m] /= area;
+        return pdf;
+      }
+
+      function cumTrapz(pdf) {
+        var xs = GRID, n = xs.length;
+        var c = new Array(n);
+        c[0] = 0;
+        for (var i = 1; i < n; i++) {
+          c[i] = c[i - 1] + 0.5 * (pdf[i] + pdf[i - 1]) * (xs[i] - xs[i - 1]);
+        }
+        return c;
+      }
+
+      function quantile(cdf, q) {
+        var xs = GRID, n = xs.length;
+        if (q <= cdf[0]) return xs[0];
+        if (q >= cdf[n - 1]) return xs[n - 1];
+        for (var i = 1; i < n; i++) {
+          if (cdf[i] >= q) {
+            var d = cdf[i] - cdf[i - 1];
+            var t = d > 0 ? (q - cdf[i - 1]) / d : 0;
+            return xs[i - 1] + t * (xs[i] - xs[i - 1]);
+          }
+        }
+        return xs[n - 1];
+      }
+
+      function tailProb(cdf, threshold) {
+        // P(p > threshold) using cdf[end] = 1 (after normalisation).
+        var xs = GRID, n = xs.length;
+        if (threshold <= xs[0]) return 1;
+        if (threshold >= xs[n - 1]) return 0;
+        for (var i = 1; i < n; i++) {
+          if (xs[i] >= threshold) {
+            var d = xs[i] - xs[i - 1];
+            var t = d > 0 ? (threshold - xs[i - 1]) / d : 0;
+            var cAtT = cdf[i - 1] + t * (cdf[i] - cdf[i - 1]);
+            return Math.max(0, Math.min(1, 1 - cAtT));
+          }
+        }
+        return 0;
+      }
+
+      function wald(k, n) {
+        if (n <= 0) return [NaN, NaN];
+        var p = k / n;
+        var se = Math.sqrt(p * (1 - p) / n);
+        return [p - 1.96 * se, p + 1.96 * se];
+      }
+
+      function wilson(k, n) {
+        if (n <= 0) return [NaN, NaN];
+        var z = 1.96, z2 = z * z;
+        var p = k / n;
+        var denom = 1 + z2 / n;
+        var centre = (p + z2 / (2 * n)) / denom;
+        var half = (z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / denom;
+        return [centre - half, centre + half];
+      }
+
+      function posteriorMode(a, b) {
+        if (a > 1 && b > 1) return (a - 1) / (a + b - 2);
+        if (a <= 1 && b > 1) return 0;
+        if (a > 1 && b <= 1) return 1;
+        return NaN; // bimodal/uniform — undefined
+      }
+
+      function likelihoodGridScaled(k, n, peakTarget) {
+        var xs = GRID, m = xs.length;
+        var logp = new Array(m), lmax = -Infinity;
+        for (var i = 0; i < m; i++) {
+          var x = xs[i];
+          var v;
+          if (x <= 0) v = (k === 0) ? 0 : -Infinity;
+          else if (x >= 1) v = (k === n) ? 0 : -Infinity;
+          else v = k * Math.log(x) + (n - k) * Math.log(1 - x);
+          logp[i] = v;
+          if (isFinite(v) && v > lmax) lmax = v;
+        }
+        var out = new Array(m), peak = 0;
+        for (var j = 0; j < m; j++) {
+          var p = isFinite(logp[j]) ? Math.exp(logp[j] - lmax) : 0;
+          out[j] = p;
+          if (p > peak) peak = p;
+        }
+        var scale = (peak > 0 && peakTarget > 0) ? (peakTarget / peak) : 1;
+        for (var t = 0; t < m; t++) out[t] *= scale;
+        return out;
+      }
+
+      function maxOf(arr) { var m = 0; for (var i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
+
+      /* ---------- state ------------------------------------------ */
+      var SCENARIOS = {
+        rookie:     { n: 5,   k: 4,   prior: 'weak'   },
+        game:       { n: 10,  k: 8,   prior: 'weak'   },
+        halfseason: { n: 100, k: 70,  prior: 'weak'   },
+        fullseason: { n: 400, k: 320, prior: 'weak'   }
+      };
+      var PRIOR_PRESETS = {
+        none:   { mu: 50, kappa: 2   },  // Beta(1,1)
+        weak:   { mu: 75, kappa: 10  },
+        strong: { mu: 75, kappa: 80  }
+      };
+
+      var state = {
+        n: 100, k: 70,
+        priorMode: 'weak',
+        mu: 75, kappa: 10
+      };
+
+      /* ---------- DOM helpers ------------------------------------ */
+      var $ = function (id) { return document.getElementById(id); };
+      function pressGroup(group, value, attr) {
+        group.querySelectorAll('[' + attr + ']').forEach(function (b) {
+          b.setAttribute('aria-pressed', String(b.getAttribute(attr) === value));
+        });
+      }
+      function pctStr(p, digits) { return Tools.fmt.pct(p, digits == null ? 1 : digits); }
+      function rangeStr(lo, hi) {
+        return pctStr(Math.max(0, Math.min(1, lo))) + ' – ' + pctStr(Math.max(0, Math.min(1, hi)))
+          + ((lo < 0 || hi > 1) ? '  (raw: ' + pctStr(lo) + ' – ' + pctStr(hi) + ')' : '');
+      }
+
+      /* ---------- chart ------------------------------------------ */
+      var SVG_NS = 'http://www.w3.org/2000/svg';
+      function el(tag, attrs) {
+        var e = document.createElementNS(SVG_NS, tag);
+        if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+      }
+
+      function drawChart(post, prior, like, ciLo, ciHi, freqMean, wci, wlci) {
+        var c = $('chart');
+        var rect = c.getBoundingClientRect();
+        var W = Math.max(320, rect.width || 720);
+        var H = Math.max(200, rect.height || Math.round(W * 9 / 16));
+        var pad = { l: 32, r: 16, t: 14, b: 64 }; // extra bottom for whiskers
+
+        var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid meet' });
+
+        var yMax = Math.max(maxOf(post), maxOf(prior), maxOf(like)) * 1.08 || 1;
+        var sx = function (x) { return pad.l + x * (W - pad.l - pad.r); };
+        var sy = function (y) { return (H - pad.b) - (y / yMax) * (H - pad.b - pad.t); };
+
+        // credible interval band (vertical strip)
+        if (isFinite(ciLo) && isFinite(ciHi)) {
+          svg.appendChild(el('rect', {
+            x: sx(ciLo), y: pad.t,
+            width: Math.max(0, sx(ciHi) - sx(ciLo)),
+            height: (H - pad.b) - pad.t,
+            'class': 'chart-band'
+          }));
+        }
+
+        // x gridlines + ticks at 0, 0.25, 0.5, 0.75, 1
+        var xticks = [0, 0.25, 0.5, 0.75, 1];
+        xticks.forEach(function (t) {
+          var x = sx(t);
+          svg.appendChild(el('line', { x1: x, x2: x, y1: pad.t, y2: H - pad.b, 'class': 'chart-grid' }));
+          var lbl = el('text', { x: x, y: H - pad.b + 14, 'text-anchor': 'middle', 'class': 'chart-label' });
+          lbl.textContent = (t * 100).toFixed(0) + '%';
+          svg.appendChild(lbl);
+        });
+
+        // axes
+        svg.appendChild(el('line', { x1: pad.l, x2: pad.l,        y1: pad.t,     y2: H - pad.b, 'class': 'chart-axis' }));
+        svg.appendChild(el('line', { x1: pad.l, x2: W - pad.r,    y1: H - pad.b, y2: H - pad.b, 'class': 'chart-axis' }));
+
+        // path builder
+        function pathFor(arr) {
+          var d = '';
+          for (var i = 0; i < arr.length; i++) {
+            d += (i === 0 ? 'M' : 'L') + sx(GRID[i]) + ' ' + sy(arr[i]);
+          }
+          return d;
+        }
+
+        // prior (dashed, text-2)
+        svg.appendChild(el('path', { d: pathFor(prior),     'class': 'chart-series chart-series--secondary' }));
+        // likelihood (dotted, text-3)
+        svg.appendChild(el('path', { d: pathFor(like),      'class': 'chart-series chart-series--tertiary' }));
+        // posterior (solid accent)
+        svg.appendChild(el('path', { d: pathFor(post),      'class': 'chart-series' }));
+
+        // frequentist best-guess vertical mark
+        if (isFinite(freqMean)) {
+          var fx = sx(Math.max(0, Math.min(1, freqMean)));
+          svg.appendChild(el('line', {
+            x1: fx, x2: fx, y1: pad.t, y2: H - pad.b,
+            stroke: 'currentColor', 'stroke-width': '1', 'stroke-dasharray': '2 3', opacity: '0.55'
+          }));
+        }
+
+        // frequentist whiskers below x-axis
+        function whisker(yOffset, lo, hi, label) {
+          var y = H - pad.b + 26 + yOffset;
+          var clo = Math.max(0, lo), chi = Math.min(1, hi);
+          // raw line (may extend beyond axis range — clipped to viewport)
+          svg.appendChild(el('line', {
+            x1: sx(Math.max(-0.05, lo)), x2: sx(Math.min(1.05, hi)),
+            y1: y, y2: y,
+            stroke: 'currentColor', 'stroke-width': '1', opacity: '0.55'
+          }));
+          // end caps
+          [clo, chi].forEach(function (xv) {
+            svg.appendChild(el('line', {
+              x1: sx(xv), x2: sx(xv), y1: y - 3, y2: y + 3,
+              stroke: 'currentColor', 'stroke-width': '1', opacity: '0.55'
+            }));
+          });
+          // best-guess dot
+          if (isFinite(freqMean)) {
+            svg.appendChild(el('circle', { cx: sx(freqMean), cy: y, r: 2.5, fill: 'currentColor', opacity: '0.7' }));
+          }
+          var t = el('text', { x: pad.l - 4, y: y + 3, 'text-anchor': 'end', 'class': 'chart-label' });
+          t.textContent = label;
+          svg.appendChild(t);
+        }
+        if (wci  && isFinite(wci[0]))  whisker(0,  wci[0],  wci[1],  'wald');
+        if (wlci && isFinite(wlci[0])) whisker(12, wlci[0], wlci[1], 'wilson');
+
+        c.innerHTML = '';
+        c.appendChild(svg);
+      }
+
+      /* ---------- recompute -------------------------------------- */
+      function recompute() {
+        var n = state.n, k = Math.min(state.k, n);
+        var mu = state.mu / 100, kappa = state.kappa;
+        var a0 = mu * kappa, b0 = (1 - mu) * kappa;
+        // For "no opinion" we want exactly Beta(1,1).
+        if (state.priorMode === 'none') { a0 = 1; b0 = 1; }
+        var a1 = a0 + k, b1 = b0 + (n - k);
+
+        // frequentist
+        var pHat = n > 0 ? k / n : NaN;
+        var w  = wald(k, n);
+        var wl = wilson(k, n);
+        $('freq-mean').textContent  = isFinite(pHat) ? pctStr(pHat) : '—';
+        $('freq-wald').textContent   = rangeStr(w[0], w[1]);
+        $('freq-wilson').textContent = rangeStr(wl[0], wl[1]);
+
+        // bayesian
+        var post  = betaPdfGrid(a1, b1);
+        var prior = betaPdfGrid(a0, b0);
+        var cdf   = cumTrapz(post);
+        var lo    = quantile(cdf, 0.025);
+        var hi    = quantile(cdf, 0.975);
+        var pmean = a1 / (a1 + b1);
+        var pmode = posteriorMode(a1, b1);
+        var pTail = tailProb(cdf, 0.75);
+        $('bay-mean').textContent = pctStr(pmean);
+        $('bay-mode').textContent = isFinite(pmode) ? pctStr(pmode) : 'undefined';
+        $('bay-ci').textContent   = pctStr(lo) + ' – ' + pctStr(hi);
+        $('bay-tail').textContent = pctStr(pTail);
+
+        // likelihood scaled to posterior peak
+        var like = likelihoodGridScaled(k, n, maxOf(post));
+
+        // chart
+        drawChart(post, prior, like, lo, hi, pHat, w, wl);
+
+        // helpers / "what changed"
+        $('k-helper').textContent = (n > 0)
+          ? 'made out of attempted — ' + (k / n * 100).toFixed(1) + '% observed'
+          : 'set attempts above 0';
+
+        var pull = pmean - pHat;
+        var pullStr;
+        if (state.priorMode === 'none') {
+          pullStr = 'with the "no opinion" prior, the bayesian best guess matches the frequentist (' + pctStr(pmean) + ').';
+        } else if (Math.abs(pull) < 0.005) {
+          pullStr = 'updated guess (' + pctStr(pmean) + ') is essentially the same as the data alone (' + pctStr(pHat) + ') — your data overwhelms your prior.';
+        } else if (pull > 0) {
+          pullStr = 'updated guess (' + pctStr(pmean) + ') is pulled UP from the data (' + pctStr(pHat) + ') toward your prior of ' + state.mu + '%. with this much data, the prior still matters.';
+        } else {
+          pullStr = 'updated guess (' + pctStr(pmean) + ') is pulled DOWN from the data (' + pctStr(pHat) + ') toward your prior of ' + state.mu + '%. with this much data, the prior still matters.';
+        }
+        $('note-pull').textContent = pullStr;
+
+        var bayWidth = hi - lo;
+        var wilWidth = (isFinite(wl[1]) && isFinite(wl[0])) ? (wl[1] - wl[0]) : NaN;
+        var widthStr;
+        if (!isFinite(wilWidth)) {
+          widthStr = '95% credible range width: ' + (bayWidth * 100).toFixed(1) + ' percentage points.';
+        } else {
+          var diff = (bayWidth - wilWidth) * 100;
+          widthStr = 'credible range width: ' + (bayWidth * 100).toFixed(1)
+            + ' pp · wilson range width: ' + (wilWidth * 100).toFixed(1)
+            + ' pp · ' + (Math.abs(diff) < 0.2 ? 'about the same.' : (diff < 0 ? 'bayesian is narrower (your prior added information).' : 'bayesian is wider (the prior is uncertain too).'));
+        }
+        $('note-width').textContent = widthStr;
+
+        var waldOut = (w[0] < 0 || w[1] > 1);
+        if (waldOut) {
+          $('note-agree').textContent = 'the textbook (wald) range goes outside 0–100% — meaningless for a rate. this is exactly when the textbook formula fails and a method like wilson, or the bayesian credible interval, is needed.';
+        } else if (n >= 200 && state.priorMode !== 'strong') {
+          $('note-agree').textContent = 'with this much data and a not-too-strong prior, both methods agree closely. the philosophical difference matters most when data is scarce.';
+        } else if (n <= 10) {
+          $('note-agree').textContent = 'with very few attempts, the prior pulls the bayesian answer toward your starting belief, while the frequentist answer just follows the small sample. small-n is where the two methods most visibly differ.';
+        } else {
+          $('note-agree').textContent = 'data and prior are in tension. try toggling the prior between "no opinion", "vague", and "strong" to see how much the bayesian answer moves while the frequentist stays put.';
+        }
+      }
+
+      /* ---------- wiring ----------------------------------------- */
+      function syncPair(rangeId, numId, onChange) {
+        var r = $(rangeId), n = $(numId);
+        function fromR() { n.value = r.value; onChange(+r.value); }
+        function fromN() {
+          var v = +n.value;
+          if (!isFinite(v)) return;
+          v = Math.max(+n.min, Math.min(+n.max, v));
+          r.value = String(v);
+          n.value = String(v);
+          onChange(v);
+        }
+        r.addEventListener('input', fromR);
+        n.addEventListener('input', fromN);
+        n.addEventListener('change', fromN);
+      }
+
+      function setN(v) {
+        state.n = v;
+        // clamp k slider/value to <= n
+        var kr = $('k-range'), kn = $('k-num');
+        kr.max = String(v); kn.max = String(v);
+        if (state.k > v) { state.k = v; kr.value = String(v); kn.value = String(v); }
+        markCustomScenario();
+        recompute();
+      }
+      function setK(v) {
+        var n = state.n;
+        if (v > n) v = n;
+        state.k = v;
+        $('k-range').value = String(v); $('k-num').value = String(v);
+        markCustomScenario();
+        recompute();
+      }
+      function setMu(v)    { state.mu = v;    markCustomPrior(); markCustomScenario(); recompute(); }
+      function setKappa(v) { state.kappa = v; markCustomPrior(); markCustomScenario(); recompute(); }
+
+      function markCustomScenario() {
+        // any manual edit moves us to "custom" scenario
+        pressGroup($('scenario'), 'custom', 'data-scenario');
+      }
+      function markCustomPrior() {
+        // sliders are visible only for custom — already pressed; nothing to do
+      }
+
+      function applyPrior(mode) {
+        state.priorMode = mode;
+        pressGroup($('prior-preset'), mode, 'data-prior');
+        var custom = $('prior-custom');
+        if (mode === 'custom') {
+          custom.hidden = false;
+        } else {
+          custom.hidden = true;
+          var p = PRIOR_PRESETS[mode];
+          if (p) {
+            state.mu = p.mu; state.kappa = p.kappa;
+            $('mu-range').value = String(p.mu);  $('mu-num').value = String(p.mu);
+            $('kappa-range').value = String(p.kappa); $('kappa-num').value = String(p.kappa);
+          }
+        }
+      }
+
+      function applyScenario(name) {
+        var s = SCENARIOS[name];
+        if (!s) {
+          pressGroup($('scenario'), 'custom', 'data-scenario');
+          return;
+        }
+        pressGroup($('scenario'), name, 'data-scenario');
+        // set n, k
+        $('n-range').value = String(s.n); $('n-num').value = String(s.n);
+        state.n = s.n;
+        var kr = $('k-range'), kn = $('k-num');
+        kr.max = String(s.n); kn.max = String(s.n);
+        kr.value = String(s.k); kn.value = String(s.k);
+        state.k = s.k;
+        applyPrior(s.prior);
+        recompute();
+      }
+
+      // Wire sliders
+      syncPair('n-range', 'n-num', setN);
+      syncPair('k-range', 'k-num', setK);
+      syncPair('mu-range', 'mu-num', setMu);
+      syncPair('kappa-range', 'kappa-num', setKappa);
+
+      // Wire prior presets
+      $('prior-preset').addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-prior]');
+        if (!b) return;
+        applyPrior(b.getAttribute('data-prior'));
+        markCustomScenario();
+        recompute();
+      });
+
+      // Wire scenarios
+      $('scenario').addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-scenario]');
+        if (!b) return;
+        var name = b.getAttribute('data-scenario');
+        if (name === 'custom') {
+          pressGroup($('scenario'), 'custom', 'data-scenario');
+          return;
+        }
+        applyScenario(name);
+      });
+
+      // Re-render on theme change & resize so chart stays sharp.
+      window.addEventListener('resize', function () { recompute(); });
+      var html = document.documentElement;
+      new MutationObserver(function () { recompute(); })
+        .observe(html, { attributes: true, attributeFilter: ['class'] });
+
+      // Initial render — default scenario "halfseason"
+      applyScenario('halfseason');
+    })();
+    </script>
+</body>
+</html>
