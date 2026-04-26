@@ -231,7 +231,7 @@
                         <span class="row__value" id="bay-mode">—</span>
                     </div>
                     <div class="row">
-                        <span class="row__label">95% most-likely range<br><span class="text-3">(credible interval)</span></span>
+                        <span class="row__label">95% credible range<br><span class="text-3">(2.5–97.5% interval)</span></span>
                         <span class="row__value" id="bay-ci">—</span>
                     </div>
                     <div class="row">
@@ -324,15 +324,19 @@ posterior mode = (α − 1) / (α + β − 2),  when α, β > 1
       function betaPdfGrid(a, b) {
         // Unnormalised log-density on the grid, then exponentiate
         // relative to the max to avoid overflow, then normalise.
+        // Endpoints are evaluated slightly inside [0, 1] so that the
+        // integrable singularity for shape params < 1 (reachable via
+        // extreme custom priors, e.g. Beta(0.02, 1.98)) shows up as a
+        // large finite value rather than being dropped to zero.
         var xs = GRID, n = xs.length;
+        var edgeEps = (n > 1) ? 0.5 * (xs[1] - xs[0]) : 1e-6;
         var logp = new Array(n);
         var lmax = -Infinity;
         for (var i = 0; i < n; i++) {
           var x = xs[i];
-          var v;
-          if (x <= 0) v = (a > 1) ? -Infinity : (a === 1 ? 0 : Infinity);
-          else if (x >= 1) v = (b > 1) ? -Infinity : (b === 1 ? 0 : Infinity);
-          else v = (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x);
+          if (x <= 0) x = edgeEps;
+          else if (x >= 1) x = 1 - edgeEps;
+          var v = (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x);
           logp[i] = v;
           if (isFinite(v) && v > lmax) lmax = v;
         }
@@ -414,14 +418,18 @@ posterior mode = (α − 1) / (α + β − 2),  when α, β > 1
       }
 
       function likelihoodGridScaled(k, n, peakTarget) {
+        // Same endpoint-eps trick as betaPdfGrid. The likelihood is
+        // p^k * (1-p)^(n-k), which only sits at zero exponent when
+        // k = 0 or k = n; in those cases the offset evaluation gives
+        // ~1 at the relevant edge, which is the right limit anyway.
         var xs = GRID, m = xs.length;
+        var edgeEps = (m > 1) ? 0.5 * (xs[1] - xs[0]) : 1e-6;
         var logp = new Array(m), lmax = -Infinity;
         for (var i = 0; i < m; i++) {
           var x = xs[i];
-          var v;
-          if (x <= 0) v = (k === 0) ? 0 : -Infinity;
-          else if (x >= 1) v = (k === n) ? 0 : -Infinity;
-          else v = k * Math.log(x) + (n - k) * Math.log(1 - x);
+          if (x <= 0) x = edgeEps;
+          else if (x >= 1) x = 1 - edgeEps;
+          var v = k * Math.log(x) + (n - k) * Math.log(1 - x);
           logp[i] = v;
           if (isFinite(v) && v > lmax) lmax = v;
         }
@@ -759,11 +767,21 @@ posterior mode = (α − 1) / (α + β − 2),  when α, β > 1
         applyScenario(name);
       });
 
-      // Re-render on theme change & resize so chart stays sharp.
-      window.addEventListener('resize', function () { recompute(); });
-      var html = document.documentElement;
-      new MutationObserver(function () { recompute(); })
-        .observe(html, { attributes: true, attributeFilter: ['class'] });
+      // Coalesce resize bursts into one redraw per animation frame.
+      // Theme changes don't need a redraw — the SVG is styled via CSS
+      // classes (chart-series, chart-band, chart-axis, ...) and inherits
+      // currentColor for the frequentist whiskers, so theme tokens
+      // restyle automatically without recomputing the grids.
+      var rafScheduled = false;
+      function scheduleRecompute() {
+        if (rafScheduled) return;
+        rafScheduled = true;
+        requestAnimationFrame(function () {
+          rafScheduled = false;
+          recompute();
+        });
+      }
+      window.addEventListener('resize', scheduleRecompute);
 
       // Initial render — default scenario "halfseason"
       applyScenario('halfseason');
